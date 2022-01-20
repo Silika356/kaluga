@@ -8,6 +8,7 @@ import javafx.scene.text.Text
 import org.jetbrains.exposed.sql.transactions.transaction
 import ru.avem.kspem.app.Main.Companion.isAppRunning
 import ru.avem.kspem.communication.model.CommunicationModel
+import ru.avem.kspem.communication.model.devices.avem.avem7.Avem
 import ru.avem.kspem.communication.model.devices.delta.Delta
 import ru.avem.kspem.communication.model.devices.owen.pr.OwenPr
 import ru.avem.kspem.data.*
@@ -24,6 +25,7 @@ import kotlin.concurrent.thread
 
 class MainViewController : Controller() {
     private val pr102 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2_1) as OwenPr
+    private val avem4 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.PV21) as Avem
     val delta = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.UZ91) as Delta
 
     private val expView: ExpView by inject()
@@ -100,7 +102,7 @@ class MainViewController : Controller() {
             currentExp = expList.next()
             loadExp()
         } else {
-//            saveProtocol()
+            saveProtocol()
             clearProtocol()
             find<ExpView>().replaceWith<MainView>()
         }
@@ -123,18 +125,18 @@ class MainViewController : Controller() {
         }
     }
     fun exit() {
-//        showTwoWayDialog(title = "Внимание!",
-//            text = "Текущий протокол будет сохранен и очищен",
-//            way1Title = "Подтвердить",
-//            way2Title = "Отменить",
-//            way1 = {
-//                saveProtocol()
-//                clearProtocol()
-//                find<ExpView>().replaceWith<MainView>()
-//            },
-//            way2 = {
-//            },
-//            currentWindow = primaryStage.scene.window)
+        showTwoWayDialog(title = "Внимание!",
+            text = "Текущий протокол будет сохранен и очищен",
+            way1Title = "Подтвердить",
+            way2Title = "Отменить",
+            way1 = {
+                saveProtocol()
+                clearProtocol()
+                find<ExpView>().replaceWith<MainView>()
+            },
+            way2 = {
+            },
+            currentWindow = primaryStage.scene.window)
                 find<ExpView>().replaceWith<MainView>()
     }
 
@@ -175,44 +177,47 @@ class MainViewController : Controller() {
         transaction {
             Protocol.new {
                 //DATA
-                objectName= ""
-                date = ""
-                time = ""
-                operator = ""
-                serial = ""
-                dataP = ""
-                dataU = ""
-                dataN = ""
-                dataF = ""
-                dataKPD = ""
-                dataCOS = ""
+                objectName = protocolModel.objectName
+                date = protocolModel.date
+                time = protocolModel.time
+                dataType = protocolModel.dataType
+                operator = protocolModel.operator
+                serial = protocolModel.serial
+                dataP = protocolModel.dataP
+                dataU = protocolModel.dataU
+                dataN = protocolModel.dataN
+                dataF = protocolModel.dataF
+                dataKPD = protocolModel.dataKPD
+                dataCOS = protocolModel.dataCOS
                 //MGR//
-                mgrU = ""
-                mgrR15 = ""
-                mgrR60 = ""
-                mgrkABS = ""
-                mgrResult = ""
+                mgrU = protocolModel.mgrU
+                mgrR15 = protocolModel.mgrR15
+                mgrR60 = protocolModel.mgrR60
+                mgrkABS = protocolModel.mgrkABS
+                mgrResult = protocolModel.mgrResult
                 //IKAS//
-                ikasRA = ""
-                ikasRB = ""
-                ikasRC = ""
-                ikasDeviation = ""
-                ikasResult = ""
+                ikasRA = protocolModel.ikasRA
+                ikasRB = protocolModel.ikasRB
+                ikasRC = protocolModel.ikasRC
+                ikasDeviation = protocolModel.ikasDeviation
+                ikasResult = protocolModel.ikasResult
                 //MOMENT//
-                momentN = ""
-                momentAVG = ""
-                momentMAX = ""
-                momentDeviation = ""
-                momentResult = ""
+                momentN = protocolModel.momentN
+                momentAVG = protocolModel.momentAVG
+                momentMAX = protocolModel.momentMAX
+                momentDeviation = protocolModel.momentDeviation
+                momentResult = protocolModel.momentResult
                 //VOLTAGE//
-                voltageUAB = ""
-                voltageUBC = ""
-                voltageUCA = ""
-                voltageUAB1000 = ""
-                voltageUBC1000 = ""
-                voltageUCA1000 = ""
-                voltageDeviation = ""
-                voltageResult = ""
+                voltageUAB = protocolModel.voltageUAB
+                voltageUBC = protocolModel.voltageUBC
+                voltageUCA = protocolModel.voltageUCA
+                voltageF = protocolModel.voltageF
+                voltageN = protocolModel.voltageN
+                voltageUAB1000 = protocolModel.voltageUAB1000
+                voltageUBC1000 = protocolModel.voltageUBC1000
+                voltageUCA1000 = protocolModel.voltageUCA1000
+                voltageDeviation = protocolModel.voltageDeviation
+                voltageResult = protocolModel.voltageResult
                 //DPR//
 
             }
@@ -225,7 +230,7 @@ class MainViewController : Controller() {
     init {
         thread(isDaemon = true) {
             while (isAppRunning) {
-                sleep(1500)
+                sleep(2000)
                 val serialPortBSY = SerialPort.getCommPorts().filter {
                     it.toString() == "CP2103 USB to RS-485"
                 }
@@ -247,36 +252,21 @@ class MainViewController : Controller() {
                             expView.circlePR200.fill = State.OK.c
                         }
                     } else {
-                        pr102.resetKMS()
+//                        pr102.resetKMS()
                         runLater {
                             mainView.circlePR200.fill = State.BAD.c
                             expView.circlePR200.fill = State.BAD.c
                         }
                     }
-                }
-                val serialPortGPT = SerialPort.getCommPorts().filter {
-                    it.toString() == "CP2103 USB to GPT"
-                }
-                if (serialPortGPT.isEmpty()) {
-                    runLater {
-                        mainView.gptIndicate.fill = State.BAD.c
-                    }
-                } else {
-                    runLater {
-                        mainView.gptIndicate.fill = State.OK.c
-                    }
-                }
-                val serialPortDelta = SerialPort.getCommPorts().filter {
-                    it.toString() == "CP2103 USB to DELTA"
-                }
-                if (serialPortDelta.isEmpty()) {
-                    runLater {
-                        mainView.deltaIndicate.fill = State.BAD.c
-                        expView.circleDelta.fill = State.INTERMEDIATE.c
-                    }
-                } else {
-                    runLater {
-                        mainView.deltaIndicate.fill = State.OK.c
+                    avem4.checkResponsibility()
+                    if (avem4.isResponding) {
+                        runLater {
+                            expView.circleAVEM.fill = State.OK.c
+                        }
+                    } else {
+                        runLater {
+                            expView.circleAVEM.fill = State.BAD.c
+                        }
                     }
                     delta.checkResponsibility()
                     if (delta.isResponding) {
@@ -289,6 +279,41 @@ class MainViewController : Controller() {
                         }
                     }
                 }
+//                val serialPortGPT = SerialPort.getCommPorts().filter {
+//                    it.toString() == "CP2103 USB to GPT"
+//                }
+//                if (serialPortGPT.isEmpty()) {
+//                    runLater {
+//                        mainView.gptIndicate.fill = State.BAD.c
+//                    }
+//                } else {
+//                    runLater {
+//                        mainView.gptIndicate.fill = State.OK.c
+//                    }
+//                }
+//                val serialPortDelta = SerialPort.getCommPorts().filter {
+//                    it.toString() == "CP2103 USB to DELTA"
+//                }
+//                if (serialPortDelta.isEmpty()) {
+//                    runLater {
+//                        mainView.deltaIndicate.fill = State.BAD.c
+//                        expView.circleDelta.fill = State.INTERMEDIATE.c
+//                    }
+//                } else {
+//                    runLater {
+//                        mainView.deltaIndicate.fill = State.OK.c
+//                    }
+//                    delta.checkResponsibility()
+//                    if (delta.isResponding) {
+//                        runLater {
+//                            expView.circleDelta.fill = State.OK.c
+//                        }
+//                    } else {
+//                        runLater {
+//                            expView.circleDelta.fill = State.BAD.c
+//                        }
+//                    }
+//                }
             }
         }
     }
@@ -299,6 +324,7 @@ class MainViewController : Controller() {
             protocolModel.time = ""
             protocolModel.operator = ""
             protocolModel.serial = ""
+            protocolModel.dataType = ""
             protocolModel.dataP = ""
             protocolModel.dataU = ""
             protocolModel.dataI = ""
@@ -329,6 +355,8 @@ class MainViewController : Controller() {
             protocolModel.voltageUAB = ""
             protocolModel.voltageUBC = ""
             protocolModel.voltageUCA = ""
+            protocolModel.voltageN = ""
+            protocolModel.voltageF = ""
             protocolModel.voltageUAB1000 = ""
             protocolModel.voltageUBC1000 = ""
             protocolModel.voltageUCA1000 = ""

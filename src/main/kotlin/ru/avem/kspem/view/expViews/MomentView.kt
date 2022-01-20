@@ -7,7 +7,6 @@ import javafx.scene.chart.NumberAxis
 import javafx.scene.chart.XYChart
 import javafx.scene.control.TableView
 import javafx.scene.layout.Priority
-import ru.avem.kspem.data.*
 import tornadofx.*
 
 
@@ -43,7 +42,7 @@ class RUNNINGView : View() {
                 minHeight = 120.0
                 maxHeight = 120.0
                 isMouseTransparent = true
-                column("Момент, Н*м", MomentData::m.getter).isEditable = false
+                column("Момент, мН*м", MomentData::m.getter).isEditable = false
                 column("n, об/мин", MomentData::n.getter).isEditable = false
                 columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
             }
@@ -54,8 +53,8 @@ class RUNNINGView : View() {
                 minHeight = 120.0
                 maxHeight = 120.0
                 isMouseTransparent = true
-                column("Сред. момент, Н*м", MomentData::mAvg.getter).isEditable = false
-                column("Макс. момент, Н*м", MomentData::mMax.getter).isEditable = false
+                column("Сред. момент, мН*м", MomentData::mAvg.getter).isEditable = false
+                column("Макс. момент, мН*м", MomentData::mMax.getter).isEditable = false
                 columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
             }
             tableview(observableListOf(data)) {
@@ -65,7 +64,7 @@ class RUNNINGView : View() {
                 minHeight = 120.0
                 maxHeight = 120.0
                 isMouseTransparent = true
-                column("Отклонение, %", MomentData::mDeviaton.getter)
+                column("Отклонение, %", MomentData::mDeviation.getter)
                 column("Результат", MomentData::result.getter)
                 columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
             }
@@ -77,8 +76,8 @@ class RUNNINGView : View() {
             }
             useMaxHeight = true
             maxWidth = 1200.0
-            animated = true
-            createSymbols = true
+            animated = false
+            createSymbols = false
             isLegendVisible = false
             xAxis.label = ("Время,с")
             yAxis.label = ("Момент, Н*м")
@@ -100,6 +99,6 @@ data class MomentData(
     val m: StringProperty = SimpleStringProperty(""),
     val mAvg: StringProperty = SimpleStringProperty(""),
     val mMax: StringProperty = SimpleStringProperty(""),
-    val mDeviaton: StringProperty = SimpleStringProperty(""),
+    val mDeviation: StringProperty = SimpleStringProperty(""),
     val result: StringProperty = SimpleStringProperty("")
 )

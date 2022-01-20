@@ -1,15 +1,13 @@
 package ru.avem.kspem.controllers.expControllers
 
-import ru.avem.kspem.communication.model.devices.trm202.TRM202Model.Companion.T_1
-import ru.avem.kspem.communication.model.devices.trm202.TRM202Model.Companion.T_2
 import ru.avem.kspem.controllers.CustomController
-import ru.avem.kspem.data.objectModel
 import ru.avem.kspem.data.protocolModel
 import ru.avem.kspem.utils.LogTag
 import ru.avem.kspem.utils.sleep
 import ru.avem.kspem.view.expViews.MGRView
 import ru.avem.stand.utils.autoformat
 import tornadofx.isDouble
+import java.util.*
 
 
 class MGRController : CustomController() {
@@ -22,44 +20,59 @@ class MGRController : CustomController() {
 
 
         if (isExperimentRunning) {
-            pr200.km7(true)
-            appendMessageToLog(LogTag.MESSAGE, "Инициализация Меггер...")
+            initButtonPost()
+        }
+
+        if (isExperimentRunning) {
+            pr102.km7(true)
+            pr102.km8(true)
+        }
+        if (isExperimentRunning) {
+            sleep(1000)
+            appendMessageToLog(LogTag.MESSAGE, "Инициализация Мегаомметра...")
             with(cs02) {
-                checkResponsibility()
-                if (isExperimentRunning) {
-                    initButtonPost()
+                var timer1 = 50
+                while (timer1-- > 0) {
+                    sleep(100)
                 }
+                checkResponsibility()
 
                 if (isResponding) {
-                    setVoltage(500)
+                    appendMessageToLog(LogTag.MESSAGE, "Измерение сопротивления 90 секунд")
+                    setVoltage(100)
                     var timer = 90.0
                     while (isExperimentRunning && timer > 0) {
                         sleep(100)
+                        model.data.time.value = "%.1f".format(Locale.ENGLISH, timer)
                         timer -= 0.1
                     }
-                    val measuredR60 = readData()[0].toDouble()
-                    val measuredUr = readData()[1].toDouble()
-                    val measuredAbs = readData()[2].toDouble()
-                    val measuredR15 = readData()[3].toDouble()
+                    if (isExperimentRunning) {
+                        val mgrData = readData()
+                        val measuredR60 = mgrData[0].toDouble()
+                        val measuredUr = mgrData[1].toDouble()
+                        val measuredAbs = mgrData[2].toDouble()
+                        val measuredR15 = mgrData[3].toDouble()
 
-                    val measuredR60Mohm = (measuredR60 / 1_000_000)
-                    val measuredR15Mohm = (measuredR15 / 1_000_000)
-                    if (measuredR60Mohm > 200_000) {
-                        model.data.U.value = measuredUr.autoformat()
-                        model.data.R15.value = "обрыв"
-                        model.data.R60.value = "обрыв"
-                        model.data.K_ABS.value = "обрыв"
-                        cause = "обрыв"
-                    } else {
-                        model.data.U.value = measuredUr.autoformat()
-                        model.data.R15.value = measuredR15Mohm.autoformat()
-                        model.data.R60.value = measuredR60Mohm.autoformat()
-                        model.data.K_ABS.value = measuredAbs.autoformat()
-                        appendMessageToLog(LogTag.DEBUG, "Заземление")
-                        timer = 90.0
-                        while (isExperimentRunning && timer > 0) {
-                            sleep(100)
-                            timer -= 0.1
+                        val measuredR60Mohm = (measuredR60 / 1_000_000)
+                        val measuredR15Mohm = (measuredR15 / 1_000_000)
+                        if (measuredR60Mohm > 200_000) {
+                            model.data.U.value = measuredUr.autoformat()
+                            model.data.R15.value = "обрыв"
+                            model.data.R60.value = "обрыв"
+                            model.data.K_ABS.value = "обрыв"
+                            cause = "обрыв"
+                        } else {
+                            model.data.U.value = measuredUr.autoformat()
+                            model.data.R15.value = measuredR15Mohm.autoformat()
+                            model.data.R60.value = measuredR60Mohm.autoformat()
+                            model.data.K_ABS.value = measuredAbs.autoformat()
+                            appendMessageToLog(LogTag.DEBUG, "Заземление")
+                            timer = 30.0
+                            while (isExperimentRunning && timer > 0) {
+                                sleep(100)
+                                model.data.time.value = "%.1f".format(Locale.ENGLISH, timer)
+                                timer -= 0.1
+                            }
                         }
                     }
 
@@ -69,7 +82,8 @@ class MGRController : CustomController() {
             }
         }
 //        finalizeExperiment()
-        pr200.km7(false)
+        pr102.km7(false)
+        pr102.km8(false)
 
 
         when (cause) {
@@ -78,8 +92,7 @@ class MGRController : CustomController() {
                     if (model.data.K_ABS.value.toDouble() < 1.3) {
                         appendMessageToLog(LogTag.ERROR, "Измеренный kABS < 1.3")
                         model.data.result.value = "Не соответствует"
-                        cause = "мегер"
-                        enableButtons()
+//                        cause = "мегер"
                     } else {
                         model.data.result.value = "Соответствует"
                         appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
@@ -95,6 +108,7 @@ class MGRController : CustomController() {
                 enableButtons()
             }
         }
+        finalizeExperiment()
         saveData()
     }
 

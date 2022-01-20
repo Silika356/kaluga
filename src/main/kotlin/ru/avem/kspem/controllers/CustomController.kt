@@ -9,11 +9,8 @@ import ru.avem.kspem.communication.model.CommunicationModel
 import ru.avem.kspem.communication.model.devices.avem.avem7.Avem
 import ru.avem.kspem.communication.model.devices.cs02021.CS02021
 import ru.avem.kspem.communication.model.devices.delta.Delta
-import ru.avem.kspem.communication.model.devices.latr.Latr
 import ru.avem.kspem.communication.model.devices.owen.pr.OwenPr
 import ru.avem.kspem.communication.model.devices.owen.pr.OwenPrModel
-import ru.avem.kspem.communication.model.devices.pm130.PM130
-import ru.avem.kspem.communication.model.devices.th01.TH01
 import ru.avem.kspem.communication.model.devices.tilkom.T42
 import ru.avem.kspem.communication.model.devices.trm202.TRM202
 import ru.avem.kspem.data.*
@@ -29,7 +26,7 @@ import kotlin.concurrent.thread
 import kotlin.experimental.and
 
 abstract class CustomController() : Component(), ScopedInstance {
-    val pr200 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2_1) as OwenPr
+    val pr102 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2_1) as OwenPr
     val avemU = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.PV21) as Avem
     val avemDpr = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.PV22) as Avem
     val ikas = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.PR61) as IKAS8
@@ -120,7 +117,7 @@ abstract class CustomController() : Component(), ScopedInstance {
     fun initPR() {
         isStartPressed = false
         isStopPressed = false
-        if (!pr200.isResponding) {
+        if (!pr102.isResponding) {
             cause = "ПР102 не отвечает"
         } else {
             cm.addWritingRegister(
@@ -128,7 +125,7 @@ abstract class CustomController() : Component(), ScopedInstance {
                 OwenPrModel.RESET_DOG,
                 1.toShort()
             )
-            pr200.initOwenPR()
+            pr102.initOwenPR()
             sleep(1000)
             cm.startPoll(CommunicationModel.DeviceID.DD2_1, OwenPrModel.INPUTS_REGISTER) { value ->
                 km1ctrl = value.toShort() and 1 > 0              // 1
@@ -143,14 +140,24 @@ abstract class CustomController() : Component(), ScopedInstance {
             sleep(1000)
             thread(isDaemon = true) {
                 while (isExperimentRunning) {
-                    if (!pr200.isResponding) cause = "потеряна связь с ПР200"
-                    if (isStopPressed) cause = "нажата кнопка <СТОП>"
-                    if (door) cause = "открыты двери шкафа"
-                    if (ekran) cause = "открыт экран"
+                    if (!isMGR) {
+                        if (!pr102.isResponding) cause = "потеряна связь с ПР200"
+                        if (isStopPressed) cause = "нажата кнопка <СТОП>"
+                        if (door) cause = "открыты двери шкафа"
+                        if (ekran) cause = "открыт экран"
+                    }
                     sleep(100)
                 }
             }
         }
+        checkKMStat()
+    }
+
+    fun checkKMStat() {
+        if (km1ctrl) cause = "КМ1 не разомкнут"
+        if (km5ctrl) cause = "КМ5 не разомкнут"
+        if (km6ctrl) cause = "КМ6 не разомкнут"
+        if (km7ctrl) cause = "КМ7 не разомкнут"
     }
 
     fun initButtonPost() {
@@ -171,7 +178,7 @@ abstract class CustomController() : Component(), ScopedInstance {
     fun finalizeExperiment() {
         isExperimentRunning = false
         cm.clearPollingRegisters()
-        pr200.resetKMS()
+        pr102.resetKMS()
         enableButtons()
     }
 

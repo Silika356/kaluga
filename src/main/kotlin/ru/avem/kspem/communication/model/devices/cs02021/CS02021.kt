@@ -4,6 +4,7 @@ import mu.KotlinLogging
 import ru.avem.kspem.communication.adapters.serial.SerialAdapter
 import ru.avem.kspem.communication.model.DeviceController
 import ru.avem.kspem.communication.model.DeviceRegister
+import ru.avem.kspem.data.isMGR
 import java.lang.Thread.sleep
 import java.nio.ByteBuffer
 
@@ -25,7 +26,9 @@ class CS02021(
 
     fun setVoltage(u: Int): Boolean {
         synchronized(protocolAdapter.connection) {
-//            protocolAdapter.connection.baudrate = BAUDRATE
+            isMGR = true
+            sleep(200)
+            protocolAdapter.connection.baudrate = BAUDRATE
             val byteU = (u / 10).toByte()
             val outputBuffer = ByteBuffer.allocate(5)
                 .put(id)
@@ -42,13 +45,17 @@ class CS02021(
                 frameSize = protocolAdapter.read(inputArray)
                 inputBuffer.put(inputArray, 0, frameSize)
             } while (inputBuffer.position() < 5 && ++attempt < 10)
-//            protocolAdapter.connection.baudrate = 38400
+            protocolAdapter.connection.baudrate = 38400
+            sleep(200)
+            isMGR = false
             return frameSize > 0
         }
     }
 
     fun readData(): FloatArray {
         synchronized(protocolAdapter.connection) {
+            isMGR = true
+            sleep(200)
             protocolAdapter.connection.baudrate = BAUDRATE
             val data = FloatArray(4)
             val outputBuffer = ByteBuffer.allocate(5)
@@ -93,6 +100,8 @@ class CS02021(
                 data[3] = finalBuffer.float
             }
             protocolAdapter.connection.baudrate = 38400
+            sleep(200)
+            isMGR = true
             return data
         }
     }
@@ -100,7 +109,9 @@ class CS02021(
     override var isResponding: Boolean = false
         get() {
             synchronized(protocolAdapter.connection) {
-//                protocolAdapter.connection.baudrate = BAUDRATE
+                isMGR = true
+                sleep(200)
+                protocolAdapter.connection.baudrate = BAUDRATE
                 val outputBuffer = ByteBuffer.allocate(5)
                     .put(id)
                     .put(0x07.toByte())
@@ -121,7 +132,9 @@ class CS02021(
                         inputBuffer.put(inputArray, 0, frameSize)
                     }
                 } while (inputBuffer.position() < 16 && ++attempt < 15)
-//                protocolAdapter.connection.baudrate = 38400
+                protocolAdapter.connection.baudrate = 38400
+                sleep(200)
+                isMGR = false
                 return inputBuffer.position() >= 16
             }
         }

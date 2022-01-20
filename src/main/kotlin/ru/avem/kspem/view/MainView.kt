@@ -264,9 +264,11 @@ class MainView : View("КСПЭМ") {
                                 protocolModel.operator = controller.position1
                                 protocolModel.objectName = cbObjects.selectionModel.selectedItem.name
                                 protocolModel.serial =  if (tfSerial.text.isNullOrEmpty()) "Не задан" else tfSerial.text
+                                protocolModel.dataType =  cbObjects.selectionModel.selectedItem.typeDpr
                                 protocolModel.dataP = cbObjects.selectionModel.selectedItem.pNom
                                 protocolModel.dataF = cbObjects.selectionModel.selectedItem.fNom
                                 protocolModel.dataN = cbObjects.selectionModel.selectedItem.nNom
+                                protocolModel.dataU = cbObjects.selectionModel.selectedItem.uNom
                                 protocolModel.dataKPD = cbObjects.selectionModel.selectedItem.kpd
                                 protocolModel.dataCOS = cbObjects.selectionModel.selectedItem.cos
                             replaceWith(find<ExpView>())

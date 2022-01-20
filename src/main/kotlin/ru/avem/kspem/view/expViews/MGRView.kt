@@ -72,7 +72,8 @@ class MGRView : View() {
             columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
             isMouseTransparent = true
 
-            column("kABS, о.е.", MGRData::K_ABS.getter)
+            column("K абс., о.е.", MGRData::K_ABS.getter)
+            column("Время, с", MGRData::time.getter)
             column("Результат", MGRData::result.getter)
         }
     }
@@ -93,6 +94,7 @@ data class MGRData(
     val R15: StringProperty = SimpleStringProperty(""),
     val R60: StringProperty = SimpleStringProperty(""),
     val result: StringProperty = SimpleStringProperty(""),
+    val time: StringProperty = SimpleStringProperty(""),
 //    val calcR15: StringProperty = SimpleStringProperty(""),
 //    val calcR60: StringProperty = SimpleStringProperty(""),
     val K_ABS: StringProperty = SimpleStringProperty("")

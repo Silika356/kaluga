@@ -24,15 +24,21 @@ class MomentController : CustomController() {
 
     override fun start() {
         model.clearTables()
+        super.start()
 
 
         if (isExperimentRunning) {
             appendMessageToLog(LogTag.MESSAGE, "Инициализация Т42...")
             t42.checkResponsibility()
-            if (!trm202.isResponding) {
+            if (!t42.isResponding) {
+//                appendMessageToLog(LogTag.ERROR, "Датчик момента не отвечает")
                 cause = "Т42 не отвечает"
+//                moment = 0.5
+//                model.data.m.value = "0.5"
+//                model.data.n.value = "60"
             } else {
                 cm.startPoll(CommunicationModel.DeviceID.M42, T42Model.TORQUE) { value ->
+                    if (!t42.isResponding) cause = "T42 не отвечает"
                     moment = value.toDouble()
                     model.data.m.value = value.autoformat()
                 }
@@ -43,7 +49,7 @@ class MomentController : CustomController() {
         }
 
         if (isExperimentRunning) {
-            pr200.km1(true)
+            pr102.km1(true)
         }
 
         if (isExperimentRunning) {
@@ -75,9 +81,6 @@ class MomentController : CustomController() {
             appendMessageToLog(LogTag.DEBUG, "Разгон ПЧ")
         }
 
-        if (isExperimentRunning) {
-            startChart()
-        }
 
         if (isExperimentRunning) {
             var timer = 10.0
@@ -88,15 +91,22 @@ class MomentController : CustomController() {
         }
 
         if (isExperimentRunning) {
+            startChart()
+        }
+
+        if (isExperimentRunning) {
             appendMessageToLog(LogTag.MESSAGE, "Анализ момента на валу")
             checkMoment()
             protocolModel.momentAVG = model.data.mAvg.value
             protocolModel.momentMAX = model.data.mMax.value
             protocolModel.momentN = model.data.n.value
             try {
-                protocolModel.momentDeviation =
+                model.data.mDeviation.value =
                     abs(((model.data.mMax.value.toDouble() - model.data.mAvg.value.toDouble()) / model.data.mAvg.value.toDouble() * 100)).autoformat()
-            } catch (e:Exception) {}
+                protocolModel.momentDeviation = model.data.mDeviation.value
+            } catch (e:Exception) {
+                appendMessageToLog(LogTag.ERROR, "Не удалось рассчитать разброс")
+            }
         }
 
 
@@ -112,22 +122,30 @@ class MomentController : CustomController() {
         }
 
         isChart = false
-        cm.stopPoll(CommunicationModel.DeviceID.M42)
-        cm.stopPoll(CommunicationModel.DeviceID.UZ91)
 
         when (cause) {
             "" -> {
-                model.data.result.value = "Успешно"
-                appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
-                controller.next()
+                if (model.data.mDeviation.value.toDoubleOrNull() != null) {
+                    if (model.data.mDeviation.value.toDouble() > 20.0) {
+                        appendMessageToLog(LogTag.ERROR, "Разброс более 20%")
+                        model.data.result.value = "Не соответствует"
+                    } else {
+                        model.data.result.value = "Успешно"
+                        appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
+                    }
+                } else {
+                    appendMessageToLog(LogTag.ERROR, "Ошибка рассчета отклонения")
+                    model.data.result.value = "Прервано"
+                }
+//                controller.next()
             }
             else -> {
                 model.data.result.value = "Прервано"
                 appendMessageToLog(LogTag.ERROR, "Испытание прервано по причине: $cause")
-                cause = "момент"
-                enableButtons()
+//                cause = "момент"
             }
         }
+        finalizeExperiment()
         protocolModel.momentResult = model.data.result.value
         restoreData()
     }
@@ -138,7 +156,6 @@ class MomentController : CustomController() {
         var avgSum = 0.0
         var avgCounter = 0
         val timer = System.currentTimeMillis()
-        thread(isDaemon = true) {
             while (System.currentTimeMillis() - timer < 10000 && isExperimentRunning) {
                 sleep(10)
                 avgSum += moment
@@ -148,7 +165,6 @@ class MomentController : CustomController() {
             avgM = avgSum / avgCounter
             model.data.mAvg.value = avgM.autoformat()
             model.data.mMax.value = maxM.autoformat()
-        }
     }
 
     private fun startChart() {

@@ -24,6 +24,8 @@ data class MotorType(
     val digital: String = "Цифровой"
 )
 
+@Volatile
+var isMGR = false
 
 val mgr = MGRController()
 val ikas = IKASController()
@@ -38,6 +40,7 @@ data class ProtocolModel(
     var time: String = "",
     var operator: String = "",
     var serial: String = "",
+    var dataType: String = "",
     var dataP: String = "",
     var dataU: String = "",
     var dataI: String = "",

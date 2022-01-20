@@ -25,6 +25,7 @@ object CommunicationModel {
     @Suppress("UNUSED_PARAMETER")
     enum class DeviceID(description: String) {
         DD2_1("ПР200-24.4.2.0"),
+        PH_1("Фазометр"),
         PV21("АВЭМ-4 Uлин."),
         PV22("АВЭМ-4 ДПР"),
         PR61("ИКАС-8"),
@@ -46,28 +47,28 @@ object CommunicationModel {
         isConnected = true
     }
 
-    var isConnectedGPT = false
+//    var isConnectedGPT = false
 
-    var connectionGPT = Connection(
-        adapterName = "CP2103 USB to GPT",
-        serialParameters = SerialParameters(8, 0, 1, 9600),
-        timeoutRead = 100,
-        timeoutWrite = 100
-    ).apply {
-        connect()
-        isConnectedGPT = true
-    }
+//    var connectionGPT = Connection(
+//        adapterName = "CP2103 USB to GPT",
+//        serialParameters = SerialParameters(8, 0, 1, 9600),
+//        timeoutRead = 100,
+//        timeoutWrite = 100
+//    ).apply {
+//        connect()
+//        isConnectedGPT = true
+//    }
 
-    var isConnectedDelta = false
-    private val connectionDelta = Connection(
-        adapterName = "CP2103 USB to DELTA",
-        serialParameters = SerialParameters(8, 0, 1, 38400),
-        timeoutRead = 100,
-        timeoutWrite = 100
-    ).apply {
-        connect()
-        isConnectedDelta = true
-    }
+//    var isConnectedDelta = false
+//    private val connectionDelta = Connection(
+//        adapterName = "CP2103 USB to DELTA",
+//        serialParameters = SerialParameters(8, 0, 1, 38400),
+//        timeoutRead = 100,
+//        timeoutWrite = 100
+//    ).apply {
+//        connect()
+//        isConnectedDelta = true
+//    }
 
     private val modbusAdapter = ModbusRTUAdapter(connection)
 //    private val deltaAdapter = ModbusRTUAdapter(connectionDelta)
@@ -75,7 +76,8 @@ object CommunicationModel {
 //    private val modbusAdapterCP2000 = ModbusRTUAdapter(connectionCP2000)
 
     private val devices: Map<DeviceID, IDeviceController> = mapOf(
-        DeviceID.DD2_1 to OwenPr(DeviceID.DD2_1.toString(), modbusAdapter, 4),
+        DeviceID.DD2_1 to OwenPr(DeviceID.DD2_1.toString(), modbusAdapter, 2),
+//        DeviceID.PH_1 to OwenPr(DeviceID.DD2_1.toString(), modbusAdapter, 4),
         DeviceID.PV21 to Avem(DeviceID.PV21.toString(), modbusAdapter, 21),
         DeviceID.PV22 to Avem(DeviceID.PV22.toString(), modbusAdapter, 22),
         DeviceID.PR61 to IKAS8(DeviceID.PR61.toString(), modbusAdapter, 61),

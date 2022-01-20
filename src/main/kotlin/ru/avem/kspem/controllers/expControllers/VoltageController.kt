@@ -6,6 +6,7 @@ import ru.avem.kspem.communication.model.devices.avem.avem7.AvemModel
 import ru.avem.kspem.communication.model.devices.delta.DeltaModel
 import ru.avem.kspem.communication.model.devices.tilkom.T42Model
 import ru.avem.kspem.controllers.CustomController
+import ru.avem.kspem.data.objectModel
 import ru.avem.kspem.data.protocolModel
 import ru.avem.kspem.utils.LogTag
 import ru.avem.kspem.utils.sleep
@@ -13,6 +14,7 @@ import ru.avem.kspem.view.expViews.VoltageView
 import ru.avem.stand.utils.autoformat
 import ru.avem.stand.utils.toDoubleOrDefault
 import tornadofx.runLater
+import java.util.*
 import kotlin.concurrent.thread
 import kotlin.math.abs
 
@@ -28,15 +30,19 @@ class VoltageController : CustomController() {
 
     override fun start() {
         model.clearTables()
-
+        super.start()
 
         if (isExperimentRunning) {
             appendMessageToLog(LogTag.MESSAGE, "Инициализация Т42...")
             t42.checkResponsibility()
-            if (!trm202.isResponding) {
+            if (!t42.isResponding) {
+//                appendMessageToLog(LogTag.ERROR,"Т42 не отвечает")
                 cause = "Т42 не отвечает"
+//                model.data.rpm.value = "500"
+//                rpm = 500.0
             } else {
                 cm.startPoll(CommunicationModel.DeviceID.M42, T42Model.RPM) { value ->
+                    if (!t42.isResponding) cause = "T42 не отвечает"
                     model.data.rpm.value = value.autoformat()
                     rpm = value.toDouble()
                 }
@@ -50,6 +56,7 @@ class VoltageController : CustomController() {
                 cause = "АВЭМ-4 не отвечает"
             } else {
                 cm.startPoll(CommunicationModel.DeviceID.PV21, AvemModel.VOLTAGE) { value ->
+                    if (!avemU.isResponding) cause = "АВЭМ-4 не отвечает"
                     voltage = value.toDouble()
                 }
                 cm.startPoll(CommunicationModel.DeviceID.PV21, AvemModel.FREQUENCY) { value ->
@@ -59,7 +66,7 @@ class VoltageController : CustomController() {
         }
 
         if (isExperimentRunning) {
-            pr200.km1(true)
+            pr102.km1(true)
         }
 
         if (isExperimentRunning) {
@@ -83,11 +90,11 @@ class VoltageController : CustomController() {
         }
 
         if (isExperimentRunning) {
-            delta.setObjectParamsRun(500 / 3000 * 50)
+            delta.setObjectParamsRun("%.2f".format(Locale.ENGLISH, (objectModel!!.nNom.toDouble() / 3000.0 * 50.0)).toDouble())
         }
 
         if (isExperimentRunning) {
-            pr200.km2(true)
+            pr102.km2(true)
         }
 
         if (isExperimentRunning) {
@@ -100,7 +107,7 @@ class VoltageController : CustomController() {
         }
 
         if (isExperimentRunning) {
-            var timer = 20.0
+            var timer = 10.0
             while (isExperimentRunning && timer > 0) {
                 sleep(100)
                 timer -= 0.1
@@ -120,8 +127,8 @@ class VoltageController : CustomController() {
         }
 
         if (isExperimentRunning) {
-            pr200.km2(false)
-            pr200.km3(true)
+            pr102.km2(false)
+            pr102.km3(true)
             sleep(2000)
         }
 
@@ -134,8 +141,8 @@ class VoltageController : CustomController() {
         }
 
         if (isExperimentRunning) {
-            pr200.km3(false)
-            pr200.km4(true)
+            pr102.km3(false)
+            pr102.km4(true)
             sleep(2000)
         }
 
@@ -178,17 +185,27 @@ class VoltageController : CustomController() {
 
         when (cause) {
             "" -> {
-                model.data.result.value = "Успешно"
-                appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
-//                controller.next()
+                if (model.data.deviation.value.toDoubleOrNull() != null) {
+                    if (model.data.deviation.value.toDouble() > 20.0) {
+                        appendMessageToLog(LogTag.ERROR, "Разброс более 20%")
+                        model.data.result.value = "Не соответствует"
+                    } else {
+                        model.data.result.value = "Успешно"
+                        appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
+                    }
+                } else {
+                    appendMessageToLog(LogTag.ERROR, "Не удалось рассчитать разброс")
+                    model.data.result.value = "Прервано"
+                }
             }
             else -> {
                 model.data.result.value = "Прервано"
                 appendMessageToLog(LogTag.ERROR, "Испытание прервано по причине: $cause")
-                cause = "момент"
-                enableButtons()
+//                cause = "момент"
+//                enableButtons()
             }
         }
+        finalizeExperiment()
         protocolModel.voltageResult = model.data.result.value
         model.data.rpm.value = protocolModel.voltageN
         model.data.freq.value = protocolModel.voltageF
