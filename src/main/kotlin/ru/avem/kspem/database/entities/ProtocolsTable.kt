@@ -12,6 +12,7 @@ object ProtocolsTable : IntIdTable() {
     var objectName = varchar("objectName", 64)
     var type = varchar("type", 64)
     var date = varchar("date", 64)
+    var dateManufacture = varchar("dateManufacture", 64)
     var operator = varchar("operator", 64)
     var time = varchar("time", 64)
     var serial = varchar("serial", 64)
@@ -56,7 +57,27 @@ object ProtocolsTable : IntIdTable() {
     var voltageResult = varchar("kzResult", 64)
 
     //DPR
-
+    var dprampSinP = varchar("dprampSinP", 64)
+    var dprampSinN = varchar("dprampSinN", 64)
+    var dprampCosP = varchar("dprampCosP", 64)
+    var dprampCosN = varchar("dprampCosN", 64)
+    var dprmaxSinP = varchar("dprmaxSinP", 64)
+    var dprmaxSinN = varchar("dprmaxSinN", 64)
+    var dprmaxCosP = varchar("dprmaxCosP", 64)
+    var dprmaxCosN = varchar("dprmaxCosN", 64)
+    var dprminSinP = varchar("dprminSinP", 64)
+    var dprminSinN = varchar("dprminSinN", 64)
+    var dprminCosP = varchar("dprminCosP", 64)
+    var dprminCosN = varchar("dprminCosN", 64)
+    var dprdprSinP = varchar("dprdprSinP", 64)
+    var dprdprSinN = varchar("dprdprSinN", 64)
+    var dprdprCosP = varchar("dprdprCosP", 64)
+    var dprdprCosN = varchar("dprdprCosN", 64)
+    var dprdeviationMin = varchar("dprdeviationMin", 64)
+    var dprdeviationMax = varchar("dprdeviationMax", 64)
+    var dprdeviationDpr = varchar("dprdeviationDpr", 64)
+    var dprhz = varchar("dprhz", 64)
+    var dprresult = varchar("dprresult", 64)
 }
 
 class Protocol(id: EntityID<Int>) : IntEntity(id) {
@@ -66,6 +87,7 @@ class Protocol(id: EntityID<Int>) : IntEntity(id) {
     var objectName by ProtocolsTable.objectName
     var dataType by ProtocolsTable.type
     var date by ProtocolsTable.date
+    var dateManufacture by ProtocolsTable.dateManufacture
     var time by ProtocolsTable.time
     var operator by ProtocolsTable.operator
     var serial by ProtocolsTable.serial
@@ -112,6 +134,27 @@ class Protocol(id: EntityID<Int>) : IntEntity(id) {
 
     //DPR//
 
+    var dprampSinP by ProtocolsTable.dprampSinP
+    var dprampSinN by ProtocolsTable.dprampSinN
+    var dprampCosP by ProtocolsTable.dprampCosP
+    var dprampCosN by ProtocolsTable.dprampCosN
+    var dprmaxSinP by ProtocolsTable.dprmaxSinP
+    var dprmaxSinN by ProtocolsTable.dprmaxSinN
+    var dprmaxCosP by ProtocolsTable.dprmaxCosP
+    var dprmaxCosN by ProtocolsTable.dprmaxCosN
+    var dprminSinP by ProtocolsTable.dprminSinP
+    var dprminSinN by ProtocolsTable.dprminSinN
+    var dprminCosP by ProtocolsTable.dprminCosP
+    var dprminCosN by ProtocolsTable.dprminCosN
+    var dprdprSinP by ProtocolsTable.dprdprSinP
+    var dprdprSinN by ProtocolsTable.dprdprSinN
+    var dprdprCosP by ProtocolsTable.dprdprCosP
+    var dprdprCosN by ProtocolsTable.dprdprCosN
+    var dprdeviationMin by ProtocolsTable.dprdeviationMin
+    var dprdeviationMax by ProtocolsTable.dprdeviationMax
+    var dprdeviationDpr by ProtocolsTable.dprdeviationDpr
+    var dprhz by ProtocolsTable.dprhz
+    var dprresult by ProtocolsTable.dprresult
 
     override fun toString(): String {
         return "$id"

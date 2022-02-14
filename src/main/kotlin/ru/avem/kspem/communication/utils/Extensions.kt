@@ -62,7 +62,7 @@ fun String?.toBooleanOrNull() = when {
 
 fun String?.cleanForParsing(): String? = when {
     this == null -> null
-    else -> replace(" ", "").replace(" ", "").replace(',', '.').toLowerCase()
+    else -> replace(" ", "").replace(" ", "").replace(',', '.').lowercase()
 }
 
 fun String?.parseToFloatOrNull() = this?.cleanForParsing()?.toFloatOrNull()
@@ -90,8 +90,8 @@ fun Double.autoformat(): String =
         with(abs(this)) {
             when {
                 this == 0.0 -> "%.0f"
-                this < 0.1f -> "%.3f"
-                this < 1f -> "%.2f"
+                this < 1f -> "%.3f"
+                this < 5f -> "%.2f"
                 this < 1000f -> "%.1f"
                 else -> "%.0f"
             }.format(Locale.ENGLISH, this@autoformat)

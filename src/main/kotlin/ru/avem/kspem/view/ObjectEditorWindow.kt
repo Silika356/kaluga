@@ -27,16 +27,17 @@ class ObjectEditorWindow : View("Редактор объектов испыта�
     var tfuNom: TextField by singleAssign()
     var tfnNom: TextField by singleAssign()
     var tfHzNom: TextField by singleAssign()
+    var tfINom: TextField by singleAssign()
+    var tfWeight: TextField by singleAssign()
     var tfkpd: TextField by singleAssign()
-    var tfcos: TextField by singleAssign()
-    var tfuVIU: TextField by singleAssign()
     var tfuMGR: TextField by singleAssign()
-    var tftimeVIU: TextField by singleAssign()
-    var tftimeHH: TextField by singleAssign()
-    var tftimeMVZ: TextField by singleAssign()
-    var tftimeRUNNING: TextField by singleAssign()
-    var tfiOV: TextField by singleAssign()
-    var tfuOV: TextField by singleAssign()
+    var tfkABS: TextField by singleAssign()
+    var tfvoltageDev: TextField by singleAssign()
+    var tfikasDev: TextField by singleAssign()
+    var tfMomentMax: TextField by singleAssign()
+    var tfdprDev: TextField by singleAssign()
+    var tfdprDevDegree: TextField by singleAssign()
+    var tfdprPairs: TextField by singleAssign()
 
     var obj: VBox by singleAssign()
     var cbObjects: ComboBox<TestObjects> by singleAssign()
@@ -88,7 +89,7 @@ class ObjectEditorWindow : View("Редактор объектов испыта�
                         }
                     }
                 }
-                label("Шифр двигателя")
+                label("Марка двигателя")
                 tfObjectName = textfield {
                     validator.addValidator(this) {
                         if (it == null && newCheck) {
@@ -171,23 +172,6 @@ class ObjectEditorWindow : View("Редактор объектов испыта�
                     }
                 }
                 hbox(16.0, Pos.CENTER) {
-                    label("Вращающий момент, Н*м") {
-                        hboxConstraints {
-                            hGrow = Priority.ALWAYS
-                        }
-                        useMaxWidth = true
-                    }
-                    tfmNom = textfield {
-                        validator.addValidator(this) {
-                            if (it?.toDoubleOrNull() == null) {
-                                error("Обязательное поле")
-                            } else if ((it.toDouble()) < 0 || (it.toDouble()) > 100) {
-                                error("Значение не в диапазоне 0 — 100")
-                            } else null
-                        }
-                    }
-                }
-                hbox(16.0, Pos.CENTER) {
                     label("Напряжение, В") {
                         hboxConstraints {
                             hGrow = Priority.ALWAYS
@@ -217,6 +201,40 @@ class ObjectEditorWindow : View("Редактор объектов испыта�
                                 error("Обязательное поле")
                             } else if ((it.toDouble()) < 0 || (it.toDouble()) > 600) {
                                 error("Значение не в диапазоне 0 — 600")
+                            } else null
+                        }
+                    }
+                }
+                hbox(16.0, Pos.CENTER) {
+                    label("Ток номинальный, А") {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                        useMaxWidth = true
+                    }
+                    tfINom = textfield {
+                        validator.addValidator(this) {
+                            if (it?.toDoubleOrNull() == null) {
+                                error("Обязательное поле")
+                            } else if ((it.toDouble()) < 0 || (it.toDouble()) > 50) {
+                                error("Значение не в диапазоне 0 — 50")
+                            } else null
+                        }
+                    }
+                }
+                hbox(16.0, Pos.CENTER) {
+                    label("Вращающий момент, Н*м") {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                        useMaxWidth = true
+                    }
+                    tfmNom = textfield {
+                        validator.addValidator(this) {
+                            if (it?.toDoubleOrNull() == null) {
+                                error("Обязательное поле")
+                            } else if ((it.toDouble()) < 0 || (it.toDouble()) > 100) {
+                                error("Значение не в диапазоне 0 — 100")
                             } else null
                         }
                     }
@@ -256,18 +274,155 @@ class ObjectEditorWindow : View("Редактор объектов испыта�
                     }
                 }
                 hbox(16.0, Pos.CENTER) {
-                    label("cos φ, о.е.") {
+                    label("Масса, кг") {
                         hboxConstraints {
                             hGrow = Priority.ALWAYS
                         }
                         useMaxWidth = true
                     }
-                    tfcos = textfield {
+                    tfWeight = textfield {
                         validator.addValidator(this) {
                             if (it?.toDoubleOrNull() == null) {
                                 error("Обязательное поле")
-                            } else if ((it.toDouble()) < 0 || (it.toDouble()) > 1) {
-                                error("Значение не в диапазоне 0 — 1")
+                            } else if ((it.toDouble()) < 0 || (it.toDouble()) > 100) {
+                                error("Значение не в диапазоне 0 — 100")
+                            } else null
+                        }
+                    }
+                }
+                separator()
+                hbox(16.0, Pos.CENTER) {
+                    label("Напряжение мегаомметра") {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                        useMaxWidth = true
+                    }
+                    tfuMGR = textfield {
+                        validator.addValidator(this) {
+                            if (it?.toDoubleOrNull() == null) {
+                                error("Обязательное поле")
+                            } else if ((it.toDouble()) < 100 || (it.toDouble()) > 1000) {
+                                error("Значение не в диапазоне 100 — 1000")
+                            } else null
+                        }
+                    }
+                }
+                hbox(16.0, Pos.CENTER) {
+                    label("Допустимый kABS мегаомметра") {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                        useMaxWidth = true
+                    }
+                    tfkABS = textfield {
+                        validator.addValidator(this) {
+                            if (it?.toDoubleOrNull() == null) {
+                                error("Обязательное поле")
+                            } else if ((it.toDouble()) < 1 || (it.toDouble()) > 4) {
+                                error("Значение не в диапазоне 1 — 4")
+                            } else null
+                        }
+                    }
+                }
+                hbox(16.0, Pos.CENTER) {
+                    label("Допустимый разброс сопротивлений") {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                        useMaxWidth = true
+                    }
+                    tfikasDev = textfield {
+                        validator.addValidator(this) {
+                            if (it?.toDoubleOrNull() == null) {
+                                error("Обязательное поле")
+                            } else if ((it.toDouble()) < 1 || (it.toDouble()) > 100) {
+                                error("Значение не в диапазоне 1 — 100")
+                            } else null
+                        }
+                    }
+                }
+                hbox(16.0, Pos.CENTER) {
+                    label("Макс. момент сопротивления вращению, мН*м") {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                        useMaxWidth = true
+                    }
+                    tfMomentMax = textfield {
+                        validator.addValidator(this) {
+                            if (it?.toDoubleOrNull() == null) {
+                                error("Обязательное поле")
+                            } else if ((it.toDouble()) < 1 || (it.toDouble()) > 10000) {
+                                error("Значение не в диапазоне 1 — 10000")
+                            } else null
+                        }
+                    }
+                }
+                hbox(16.0, Pos.CENTER) {
+                    label("Допустимый разброс напряжений ЭДС") {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                        useMaxWidth = true
+                    }
+                    tfvoltageDev = textfield {
+                        validator.addValidator(this) {
+                            if (it?.toDoubleOrNull() == null) {
+                                error("Обязательное поле")
+                            } else if ((it.toDouble()) < 1 || (it.toDouble()) > 100) {
+                                error("Значение не в диапазоне 1 — 100")
+                            } else null
+                        }
+                    }
+                }
+                hbox(16.0, Pos.CENTER) {
+                    label("Допустимый разброс напряжений ДПР") {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                        useMaxWidth = true
+                    }
+                    tfdprDev = textfield {
+                        validator.addValidator(this) {
+                            if (it?.toDoubleOrNull() == null) {
+                                error("Обязательное поле")
+                            } else if ((it.toDouble()) < 1 || (it.toDouble()) > 100) {
+                                error("Значение не в диапазоне 1 — 100")
+                            } else null
+                        }
+                    }
+                }
+                hbox(16.0, Pos.CENTER) {
+                    label("Максимальное отклонение ДПР, эл.гр.") {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                        useMaxWidth = true
+                    }
+                    tfdprDevDegree = textfield {
+                        validator.addValidator(this) {
+                            if (it?.toDoubleOrNull() == null) {
+                                error("Обязательное поле")
+                            } else if ((it.toDouble()) < 1 || (it.toDouble()) > 100) {
+                                error("Значение не в диапазоне 1 — 100")
+                            } else null
+                        }
+                    }
+                }
+                hbox(16.0, Pos.CENTER) {
+                    label("Число пар магнитных полюсов двигателя") {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                        useMaxWidth = true
+                    }
+                    tfdprPairs = textfield {
+                        validator.addValidator(this) {
+                            if (it?.toDoubleOrNull() == null) {
+                                error("Обязательное поле")
+                            } else if ((it.toDouble()) < 1 || (it.toDouble()) > 32) {
+                                error("Значение не в диапазоне 1 — 32")
                             } else null
                         }
                     }
@@ -296,9 +451,19 @@ class ObjectEditorWindow : View("Редактор объектов испыта�
                 tfuNom.text = uNom
                 tfnNom.text = nNom
                 tfkpd.text = kpd
-                tfcos.text = cos
-                tfHzNom.text = fNom
+                tfHzNom.text = hzNom
                 tfmNom.text = mNom
+                tfINom.text = iNom
+                tfWeight.text = weightNom
+
+                tfuMGR.text = uMGR
+                tfkABS.text = kABS
+                tfikasDev.text = ikasDev
+                tfvoltageDev.text = voltageDev
+                tfdprDev.text = dprDev
+                tfdprDevDegree.text = dprDevDegree
+                tfMomentMax.text = momentMax
+                tfdprPairs.text = dprPairs
             }
         }
     }
@@ -323,9 +488,19 @@ class ObjectEditorWindow : View("Редактор объектов испыта�
                     uNom = tfuNom.text
                     mNom = tfmNom.text
                     nNom = tfnNom.text
-                    fNom = tfHzNom.text
+                    hzNom = tfHzNom.text
                     kpd = tfkpd.text
-                    cos = tfcos.text
+                    weightNom = tfWeight.text
+                    iNom = tfINom.text
+
+                    uMGR = tfuMGR.text
+                    kABS = tfkABS.text
+                    ikasDev = tfikasDev.text
+                    voltageDev = tfvoltageDev.text
+                    dprDev = tfdprDev.text
+                    dprDevDegree = tfdprDevDegree.text
+                    momentMax = tfMomentMax.text
+                    dprPairs = tfdprPairs.text
                 }
             }
             getObjects()

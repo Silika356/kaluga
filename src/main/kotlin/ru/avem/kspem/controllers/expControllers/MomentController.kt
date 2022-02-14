@@ -5,11 +5,14 @@ import ru.avem.kspem.communication.model.CommunicationModel
 import ru.avem.kspem.communication.model.devices.delta.DeltaModel
 import ru.avem.kspem.communication.model.devices.tilkom.T42Model
 import ru.avem.kspem.controllers.CustomController
+import ru.avem.kspem.data.objectModel
 import ru.avem.kspem.data.protocolModel
 import ru.avem.kspem.utils.LogTag
+import ru.avem.kspem.utils.Singleton
 import ru.avem.kspem.utils.sleep
 import ru.avem.kspem.view.expViews.RUNNINGView
 import ru.avem.stand.utils.autoformat
+import ru.avem.stand.utils.toDoubleOrDefault
 import tornadofx.runLater
 import kotlin.concurrent.thread
 import kotlin.math.abs
@@ -31,18 +34,14 @@ class MomentController : CustomController() {
             appendMessageToLog(LogTag.MESSAGE, "Инициализация Т42...")
             t42.checkResponsibility()
             if (!t42.isResponding) {
-//                appendMessageToLog(LogTag.ERROR, "Датчик момента не отвечает")
                 cause = "Т42 не отвечает"
-//                moment = 0.5
-//                model.data.m.value = "0.5"
-//                model.data.n.value = "60"
             } else {
-                cm.startPoll(CommunicationModel.DeviceID.M42, T42Model.TORQUE) { value ->
+                cm.startPoll(CommunicationModel.DeviceID.T42, T42Model.TORQUE) { value ->
                     if (!t42.isResponding) cause = "T42 не отвечает"
-                    moment = value.toDouble()
-                    model.data.m.value = value.autoformat()
+                    moment = abs(value.toDouble())
+                    model.data.m.value = moment.autoformat()
                 }
-                cm.startPoll(CommunicationModel.DeviceID.M42, T42Model.RPM) { value ->
+                cm.startPoll(CommunicationModel.DeviceID.T42, T42Model.RPM) { value ->
                     model.data.n.value = value.autoformat()
                 }
             }
@@ -54,7 +53,7 @@ class MomentController : CustomController() {
 
         if (isExperimentRunning) {
             appendMessageToLog(LogTag.MESSAGE, "Инициализация Delta...")
-            var timeDelta = 100
+            var timeDelta = 50
             while (isExperimentRunning && timeDelta-- > 0) {
                 sleep(100)
             }
@@ -73,7 +72,7 @@ class MomentController : CustomController() {
         }
 
         if (isExperimentRunning) {
-            delta.setObjectParamsRun(1)
+            delta.setObjectParamsRun(1.05)
         }
 
         if (isExperimentRunning) {
@@ -83,11 +82,16 @@ class MomentController : CustomController() {
 
 
         if (isExperimentRunning) {
-            var timer = 10.0
+            var timer = 5.0
             while (isExperimentRunning && timer > 0) {
                 sleep(100)
                 timer -= 0.1
             }
+        }
+
+        if (isExperimentRunning) {
+            t42.readRegister(t42.getRegisterById(T42Model.RPM))
+            if (t42.getRegisterById(T42Model.RPM).value.toDouble() < 40) cause = "несоответствие скорости вращения"
         }
 
         if (isExperimentRunning) {
@@ -100,15 +104,14 @@ class MomentController : CustomController() {
             protocolModel.momentAVG = model.data.mAvg.value
             protocolModel.momentMAX = model.data.mMax.value
             protocolModel.momentN = model.data.n.value
-            try {
-                model.data.mDeviation.value =
-                    abs(((model.data.mMax.value.toDouble() - model.data.mAvg.value.toDouble()) / model.data.mAvg.value.toDouble() * 100)).autoformat()
-                protocolModel.momentDeviation = model.data.mDeviation.value
-            } catch (e:Exception) {
-                appendMessageToLog(LogTag.ERROR, "Не удалось рассчитать разброс")
-            }
         }
 
+
+        isChart = false
+
+//        while (isExperimentRunning) {
+//            sleep(100)
+//        }
 
         delta.stopObject()
 
@@ -121,54 +124,51 @@ class MomentController : CustomController() {
             timerDelta -= 0.1
         }
 
-        isChart = false
 
         when (cause) {
             "" -> {
-                if (model.data.mDeviation.value.toDoubleOrNull() != null) {
-                    if (model.data.mDeviation.value.toDouble() > 20.0) {
-                        appendMessageToLog(LogTag.ERROR, "Разброс более 20%")
-                        model.data.result.value = "Не соответствует"
-                    } else {
-                        model.data.result.value = "Успешно"
-                        appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
-                    }
+                if (model.data.mMax.value.toDouble() > objectModel!!.momentMax.toDoubleOrDefault(1000.0)) {
+                    appendMessageToLog(LogTag.ERROR, "Макс. момент более ${objectModel!!.momentMax.toDoubleOrDefault(1000.0)} мН*м")
+                    model.data.result.value = "Не соответствует"
                 } else {
-                    appendMessageToLog(LogTag.ERROR, "Ошибка рассчета отклонения")
-                    model.data.result.value = "Прервано"
+                    model.data.result.value = "Успешно"
+                    appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
                 }
-//                controller.next()
             }
+//                controller.next()
             else -> {
                 model.data.result.value = "Прервано"
                 appendMessageToLog(LogTag.ERROR, "Испытание прервано по причине: $cause")
-//                cause = "момент"
             }
         }
         finalizeExperiment()
         protocolModel.momentResult = model.data.result.value
         restoreData()
+        if (model.data.result.value == "Успешно" && Singleton.isAutoMod) {
+            controller.next()
+        }
     }
 
     private fun checkMoment() {
-        var avgM = moment
+        var avgM = 0.0
         var maxM = 0.0
         var avgSum = 0.0
         var avgCounter = 0
         val timer = System.currentTimeMillis()
-            while (System.currentTimeMillis() - timer < 10000 && isExperimentRunning) {
-                sleep(10)
-                avgSum += moment
-                avgCounter++
-                if (moment > maxM) maxM = moment
-            }
-            avgM = avgSum / avgCounter
-            model.data.mAvg.value = avgM.autoformat()
-            model.data.mMax.value = maxM.autoformat()
+        while (System.currentTimeMillis() - timer < 10000 && isExperimentRunning) {
+            sleep(50)
+            avgSum += moment
+            avgCounter++
+            if (moment > maxM) maxM = moment
+        }
+        avgM = avgSum / avgCounter
+        model.data.mAvg.value = avgM.autoformat()
+        model.data.mMax.value = maxM.autoformat()
     }
 
     private fun startChart() {
-        var curTime = 0.1
+        isChart = true
+        var curTime = 0.0
         thread(isDaemon = true) {
             runLater {
                 model.series.data.clear()
@@ -178,8 +178,8 @@ class MomentController : CustomController() {
                 runLater {
                     model.series.data.add(XYChart.Data(curTime, moment))
                 }
-                sleep(10)
-                curTime += 0.01
+                curTime += 0.05
+                sleep(50)
             }
         }
     }

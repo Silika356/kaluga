@@ -11,6 +11,7 @@ import ru.avem.kspem.communication.model.devices.cs02021.CS02021
 import ru.avem.kspem.communication.model.devices.delta.Delta
 import ru.avem.kspem.communication.model.devices.owen.pr.OwenPr
 import ru.avem.kspem.communication.model.devices.owen.pr.OwenPrModel
+import ru.avem.kspem.communication.model.devices.avem.phaseMeter.PhaseMeter
 import ru.avem.kspem.communication.model.devices.tilkom.T42
 import ru.avem.kspem.communication.model.devices.trm202.TRM202
 import ru.avem.kspem.data.*
@@ -31,9 +32,10 @@ abstract class CustomController() : Component(), ScopedInstance {
     val avemDpr = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.PV22) as Avem
     val ikas = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.PR61) as IKAS8
     val trm202 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.PS81) as TRM202
-    val t42 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.M42) as T42
+    val t42 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.T42) as T42
     val cs02 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.PRV89) as CS02021
     val delta = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.UZ91) as Delta
+    val phaseMeter = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.OGS_1) as PhaseMeter
     val cm = CommunicationModel
 
     val controller: MainViewController by inject()

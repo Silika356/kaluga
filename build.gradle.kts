@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.6.0"
     application
 }
 
@@ -67,6 +67,8 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.25")
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("ch.qos.logback:logback-core:1.2.3")
+    implementation("net.java.dev.jna:jna:5.10.0")
 
     implementation(":kserialpooler-1.0")
+    implementation(":ktspl-1.0-SNAPSHOT")
 }

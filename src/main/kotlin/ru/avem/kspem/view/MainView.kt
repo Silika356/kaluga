@@ -13,14 +13,18 @@ import javafx.scene.shape.Circle
 import javafx.stage.Modality
 import org.jetbrains.exposed.sql.transactions.transaction
 import ru.avem.kspem.controllers.MainViewController
+import ru.avem.kspem.controllers.printerController.TSCPrinter
 import ru.avem.kspem.data.MainViewTable
 import ru.avem.kspem.data.objectModel
 import ru.avem.kspem.data.protocolModel
 import ru.avem.kspem.database.entities.TestObjects
-import ru.avem.kspem.utils.*
+import ru.avem.kspem.protocol.PrinterProtocol
+import ru.avem.kspem.utils.Singleton
+import ru.avem.kspem.utils.State
 import ru.avem.kspem.view.Styles.Companion.mainTheme
 import tornadofx.*
 import tornadofx.controlsfx.errorNotification
+import tornadofx.controlsfx.infoNotification
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
@@ -34,14 +38,13 @@ class MainView : View("КСПЭМ") {
 
     private var cbObjects: ComboBox<TestObjects> by singleAssign()
     var comIndicate: Circle by singleAssign()
-    var gptIndicate: Circle by singleAssign()
-    var deltaIndicate: Circle by singleAssign()
     private var sliderColor: Slider by singleAssign()
     private var sliderSaturation: Slider by singleAssign()
     private var sliderBrightness: Slider by singleAssign()
 
     var circlePR200: Circle by singleAssign()
     var tfSerial: TextField by singleAssign()
+    var tfDate: TextField by singleAssign()
     var btnAuto: Button by singleAssign()
     var cbList = mutableListOf<CheckBox>()
     var labelType: Label by singleAssign()
@@ -210,7 +213,7 @@ class MainView : View("КСПЭМ") {
                     topAnchor = 32.0
                 }
                 hbox(16.0, Pos.CENTER_LEFT) {
-                    label("Тип двигателя:")
+                    label("Марка двигателя:")
                     cbObjects = combobox {
                         hboxConstraints {
                             hGrow = Priority.ALWAYS
@@ -241,6 +244,14 @@ class MainView : View("КСПЭМ") {
                         }
                     }
                 }
+                hbox(16.0, Pos.CENTER) {
+                    label("Дата изготовления:")
+                    tfDate = textfield {
+                        hboxConstraints {
+                            hGrow = Priority.ALWAYS
+                        }
+                    }
+                }
                 tableview(observableListOf(tableData)) {
                     hboxConstraints {
                         useMaxWidth = true
@@ -254,29 +265,88 @@ class MainView : View("КСПЭМ") {
                     column("Частота вращения, об/мин", MainViewTable::nNom.getter).isEditable = false
                     columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
                 }
+                vbox(16.0, Pos.CENTER_LEFT) {
+                    paddingLeft = 64.0
+                    checkbox("Автоматический режим") {
+                        isSelected = Singleton.isAutoMod
+                        onAction = EventHandler {
+                            Singleton.isAutoMod = isSelected
+                            with(config) {
+                                set("ISAUTOMOD" to Singleton.isAutoMod)
+                                save()
+                            }
+                        }
+                    }
+                    checkbox("Печать этикетки при успешном завершении") {
+                        isSelected = Singleton.isPrinter
+                        onAction = EventHandler {
+                            Singleton.isPrinter = isSelected
+                            with(config) {
+                                set("ISPRINTER" to Singleton.isPrinter)
+                                save()
+                            }
+                        }
+                    }
+                    button("Проверить подключение к принтеру") {
+                        action {
+                            TSCPrinter.INSTANCE.openport("TSC TE200")
+                            if (TSCPrinter.INSTANCE.usbportqueryprinter().toInt() == -1) {
+                                errorNotification("Проверка подключения к принтеру", "Принтер не подключен")
+                            } else {
+                                infoNotification("Проверка подключения к принтеру", "Успешно")
+                            }
+                            TSCPrinter.INSTANCE.closeport()
+                        }
+                    }
+                    button("Тестовая печать") {
+                        action {
+                            TSCPrinter.printDocument(
+                                PrinterProtocol(
+                                    label1 = "ДСМ-3,0-3000-1-Д-У3 IM2081 IC41 220В",
+                                    hz = "400",
+                                    volt = "220",
+                                    amperage = "10",
+                                    kpd = "85",
+                                    power = "3,0",
+                                    rpm = "3000",
+                                    moment = "9,6",
+                                    mass = "10,5",
+                                    objectNumber = "329.16 0001",
+                                    date = "25.11.2016"
+                                ).document
+                            )
+                        }
+                    }
+                }
                 btnAuto = button("Перейти к испытанию") {
                     action {
-                        if (cbObjects.selectionModel.selectedItem != null) {
+                        TSCPrinter.INSTANCE.openport("TSC TE200")
+                        if (Singleton.isPrinter && TSCPrinter.INSTANCE.usbportqueryprinter().toInt() == -1) {
+                            errorNotification("Проверка подключения к принтеру", "Принтер не подключен")
+                        } else {
+                            if (cbObjects.selectionModel.selectedItem != null) {
                                 controller.clearProtocol()
                                 objectModel = cbObjects.selectionModel.selectedItem
-                                protocolModel.date = SimpleDateFormat("dd.MM.y").format(System.currentTimeMillis()).toString()
-                                protocolModel.time = SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis()).toString()
+                                protocolModel.dateManufacture = tfDate.text
+                                protocolModel.time =
+                                    SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis()).toString()
                                 protocolModel.operator = controller.position1
                                 protocolModel.objectName = cbObjects.selectionModel.selectedItem.name
-                                protocolModel.serial =  if (tfSerial.text.isNullOrEmpty()) "Не задан" else tfSerial.text
-                                protocolModel.dataType =  cbObjects.selectionModel.selectedItem.typeDpr
+                                protocolModel.serial = if (tfSerial.text.isNullOrEmpty()) "Не задан" else tfSerial.text
+                                protocolModel.dataType = cbObjects.selectionModel.selectedItem.typeDpr
                                 protocolModel.dataP = cbObjects.selectionModel.selectedItem.pNom
-                                protocolModel.dataF = cbObjects.selectionModel.selectedItem.fNom
+                                protocolModel.dataF = cbObjects.selectionModel.selectedItem.hzNom
                                 protocolModel.dataN = cbObjects.selectionModel.selectedItem.nNom
                                 protocolModel.dataU = cbObjects.selectionModel.selectedItem.uNom
                                 protocolModel.dataKPD = cbObjects.selectionModel.selectedItem.kpd
-                                protocolModel.dataCOS = cbObjects.selectionModel.selectedItem.cos
-                            replaceWith(find<ExpView>())
-                        } else {
-                            runLater {
-                                errorNotification("Ошибка", "Не выбран ОИ")
+                                replaceWith(find<ExpView>())
+                            } else {
+                                runLater {
+                                    errorNotification("Ошибка", "Не выбран ОИ")
+                                }
                             }
                         }
+                        TSCPrinter.INSTANCE.closeport()
                     }
                 }
             }
@@ -295,28 +365,6 @@ class MainView : View("КСПЭМ") {
                     isSmooth = true
                 }
                 label(" Связь БСУ") {
-                    hboxConstraints {
-                        hGrow = Priority.ALWAYS
-                    }
-                }
-                separator(Orientation.VERTICAL)
-                gptIndicate = circle(radius = 20) {
-                    fill = State.INTERMEDIATE.c
-                    stroke = c("black")
-                    isSmooth = true
-                }
-                label(" Связь ДПР") {
-                    hboxConstraints {
-                        hGrow = Priority.ALWAYS
-                    }
-                }
-                separator(Orientation.VERTICAL)
-                deltaIndicate = circle(radius = 20) {
-                    fill = State.INTERMEDIATE.c
-                    stroke = c("black")
-                    isSmooth = true
-                }
-                label(" Связь Delta") {
                     hboxConstraints {
                         hGrow = Priority.ALWAYS
                     }
@@ -416,4 +464,3 @@ class MainView : View("КСПЭМ") {
         }
     }
 }
-

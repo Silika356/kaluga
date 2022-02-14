@@ -58,15 +58,21 @@ class AuthorizationView : View("Авторизация") {
             Singleton.color1 = config["COLOR"].toString().toDouble()
             Singleton.color2 = config["SATURATION"].toString().toDouble()
             Singleton.color3 = config["BRIGHTNESS"].toString().toDouble()
+            Singleton.isAutoMod = config["ISAUTOMOD"].toString().toBoolean()
+            Singleton.isPrinter = config["ISPRINTER"].toString().toBoolean()
         } catch (e: Exception) {
             with(config) {
                 set("COLOR" to 20)
                 set("SATURATION" to 0.5)
                 set("BRIGHTNESS" to 1.0)
+                set("ISAUTOMOD" to false)
+                set("ISPRINTER" to false)
                 save()
                 Singleton.color1 = config["COLOR"].toString().toDouble()
                 Singleton.color2 = config["SATURATION"].toString().toDouble()
                 Singleton.color3 = config["BRIGHTNESS"].toString().toDouble()
+                Singleton.isAutoMod = config["ISAUTOMOD"].toString().toBoolean()
+                Singleton.isPrinter = config["ISPRINTER"].toString().toBoolean()
             }
         }
 

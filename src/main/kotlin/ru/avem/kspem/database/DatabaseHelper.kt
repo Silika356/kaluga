@@ -30,6 +30,11 @@ fun validateDB() {
     if (!File("cfg\\ReadMe.txt").exists()) {
         copyFileFromStream(Main::class.java.getResource("ReadMe.txt").openStream(), File("cfg/ReadMe.txt"))
     }
+
+    if (!File("cfg\\TSCLIB.dll").exists()) {
+        copyFileFromStream(Main::class.java.getResource("TSCLIB.dll").openStream(), File("cfg/TSCLIB.dll"))
+    }
+
     if (!File("cfg\\protocol.xlsx").exists()) {
         copyFileFromStream(Main::class.java.getResource("protocol.xlsx").openStream(), File("cfg/protocol.xlsx"))
     }
@@ -57,32 +62,53 @@ fun validateDB() {
 
         if (TestObjects.all().count() < 1) {
             TestObjects.new {
-                name = "ДСМ-0,18-300 цифровой"
-                typeDpr = dprType.digital
-                pNom = "0.18"
-                uNom = "220"
-                fNom = "50"
-                nNom = "300"
-                mNom = "5.7"
-                kpd = "96"
-                cos = "0.93"
-            }
-
-            TestObjects.new {
                 name = "ДСМ-0,18-300 синусный"
                 typeDpr = dprType.sin
                 pNom = "0.18"
                 uNom = "220"
-                fNom = "50"
+                hzNom = "50"
                 nNom = "300"
                 mNom = "5.7"
                 kpd = "96"
-                cos = "0.93"
+                iNom = "10"
+                weightNom = "10.5"
+
+                uMGR = "100"
+                kABS = "1.4"
+                voltageDev = "5"
+                ikasDev = "5"
+                dprDev = "5"
+                dprDevDegree = "10"
+                dprPairs = "8"
+                momentMax = "1000"
+            }
+
+            TestObjects.new {
+                name = "ДСМ-3,0-3000-1-Д-У3 IM2081 IC41 220 В"
+                typeDpr = dprType.dif
+                pNom = "3.0"
+                uNom = "220"
+                hzNom = "400"
+                nNom = "3000"
+                mNom = "9.6"
+                kpd = "85"
+                iNom = "10"
+                weightNom = "10.5"
+
+                uMGR = "100"
+                kABS = "1.4"
+                voltageDev = "5"
+                ikasDev = "5"
+                dprDev = "5"
+                dprDevDegree = "10"
+                dprPairs = "8"
+                momentMax = "1000"
             }
 
             Protocol.new {
                 objectName = "ДСМ-0,18-300"
                 dataType = dprType.sin
+                dateManufacture = "01.06.2021"
                 date = SimpleDateFormat("dd.MM.y").format(System.currentTimeMillis()).toString()
                 time = SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis()).toString()
                 operator = "Авиаагрегат-Н"
@@ -123,7 +149,27 @@ fun validateDB() {
                 voltageDeviation = "2.3"
                 voltageResult = "Успешно"
 
-
+                dprampSinP = "3.51"
+                dprampSinN = "3.51"
+                dprampCosP = "3.51"
+                dprampCosN = "3.51"
+                dprmaxSinP = "4.3"
+                dprmaxSinN = "4.3"
+                dprmaxCosP = "4.3"
+                dprmaxCosN = "4.3"
+                dprminSinP = "0.77"
+                dprminSinN = "0.77"
+                dprminCosP = "0.77"
+                dprminCosN = "0.77"
+                dprdprSinP = "0"
+                dprdprSinN = "180"
+                dprdprCosP = "90"
+                dprdprCosN = "270"
+                dprdeviationMin = "0"
+                dprdeviationMax = "0"
+                dprdeviationDpr = "0"
+                dprhz = "8"
+                dprresult = "Успешно"
             }
         }
     }

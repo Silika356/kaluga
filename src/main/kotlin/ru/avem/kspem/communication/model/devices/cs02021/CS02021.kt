@@ -27,8 +27,8 @@ class CS02021(
     fun setVoltage(u: Int): Boolean {
         synchronized(protocolAdapter.connection) {
             isMGR = true
-            sleep(200)
             protocolAdapter.connection.baudrate = BAUDRATE
+            sleep(300)
             val byteU = (u / 10).toByte()
             val outputBuffer = ByteBuffer.allocate(5)
                 .put(id)
@@ -46,7 +46,7 @@ class CS02021(
                 inputBuffer.put(inputArray, 0, frameSize)
             } while (inputBuffer.position() < 5 && ++attempt < 10)
             protocolAdapter.connection.baudrate = 38400
-            sleep(200)
+            sleep(300)
             isMGR = false
             return frameSize > 0
         }
@@ -55,8 +55,8 @@ class CS02021(
     fun readData(): FloatArray {
         synchronized(protocolAdapter.connection) {
             isMGR = true
-            sleep(200)
             protocolAdapter.connection.baudrate = BAUDRATE
+            sleep(300)
             val data = FloatArray(4)
             val outputBuffer = ByteBuffer.allocate(5)
                 .put(id)
@@ -100,7 +100,7 @@ class CS02021(
                 data[3] = finalBuffer.float
             }
             protocolAdapter.connection.baudrate = 38400
-            sleep(200)
+            sleep(300)
             isMGR = true
             return data
         }
@@ -110,8 +110,8 @@ class CS02021(
         get() {
             synchronized(protocolAdapter.connection) {
                 isMGR = true
-                sleep(200)
                 protocolAdapter.connection.baudrate = BAUDRATE
+                sleep(300)
                 val outputBuffer = ByteBuffer.allocate(5)
                     .put(id)
                     .put(0x07.toByte())
@@ -133,7 +133,7 @@ class CS02021(
                     }
                 } while (inputBuffer.position() < 16 && ++attempt < 15)
                 protocolAdapter.connection.baudrate = 38400
-                sleep(200)
+                sleep(300)
                 isMGR = false
                 return inputBuffer.position() >= 16
             }

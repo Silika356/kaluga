@@ -5,17 +5,12 @@ import ru.avem.kserialpooler.communication.adapters.modbusrtu.ModbusRTUAdapter
 import ru.avem.kserialpooler.communication.utils.SerialParameters
 import ru.avem.kspem.app.Main.Companion.isAppRunning
 import ru.avem.kspem.communication.adapters.serial.SerialAdapter
-import ru.avem.kspem.communication.adapters.stringascii.StringASCIIAdapter
 import ru.avem.kspem.communication.model.devices.avem.avem7.Avem
 import ru.avem.kspem.communication.model.devices.cs02021.CS02021
 import ru.avem.kspem.communication.model.devices.delta.Delta
-import ru.avem.kspem.communication.model.devices.gpt.GPT
-import ru.avem.kspem.communication.model.devices.latr.Latr
 import ru.avem.kspem.communication.model.devices.owen.pr.OwenPr
-import ru.avem.kspem.communication.model.devices.pm130.PM130
-import ru.avem.kspem.communication.model.devices.th01.TH01
+import ru.avem.kspem.communication.model.devices.avem.phaseMeter.PhaseMeter
 import ru.avem.kspem.communication.model.devices.tilkom.T42
-import ru.avem.kspem.communication.model.devices.tilkom.T42Model
 import ru.avem.kspem.communication.model.devices.trm202.TRM202
 import ru.avem.stand.modules.r.communication.model.devices.avem.ikas.IKAS8
 import java.lang.Thread.sleep
@@ -30,10 +25,10 @@ object CommunicationModel {
         PV22("АВЭМ-4 ДПР"),
         PR61("ИКАС-8"),
         PS81("ТРМ202 - Термометр - окр. воздух"),
-        M42("Датчик момента"),
         PRV89("ЦС0202-1"),
         T42("Преобразователь датчика момента Т42"),
         UZ91("ЧП Delta 1.5кВт"),
+        OGS_1("Фазометр ОГС-1")
     }
     var isConnected = false
 
@@ -72,19 +67,19 @@ object CommunicationModel {
 
     private val modbusAdapter = ModbusRTUAdapter(connection)
 //    private val deltaAdapter = ModbusRTUAdapter(connectionDelta)
-    private val gptAdapter = SerialAdapter(connection)
+    private val csAdapter = SerialAdapter(connection)
 //    private val modbusAdapterCP2000 = ModbusRTUAdapter(connectionCP2000)
 
     private val devices: Map<DeviceID, IDeviceController> = mapOf(
         DeviceID.DD2_1 to OwenPr(DeviceID.DD2_1.toString(), modbusAdapter, 2),
-//        DeviceID.PH_1 to OwenPr(DeviceID.DD2_1.toString(), modbusAdapter, 4),
         DeviceID.PV21 to Avem(DeviceID.PV21.toString(), modbusAdapter, 21),
         DeviceID.PV22 to Avem(DeviceID.PV22.toString(), modbusAdapter, 22),
         DeviceID.PR61 to IKAS8(DeviceID.PR61.toString(), modbusAdapter, 61),
         DeviceID.PS81 to TRM202(DeviceID.PS81.toString(), modbusAdapter, 81),
-        DeviceID.M42 to T42(DeviceID.M42.toString(), modbusAdapter, 42),
-        DeviceID.PRV89 to CS02021 (DeviceID.PRV89.toString(), gptAdapter, 1),
-        DeviceID.UZ91 to Delta(DeviceID.UZ91.toString(), modbusAdapter, 91)
+        DeviceID.T42 to T42(DeviceID.T42.toString(), modbusAdapter, 42),
+        DeviceID.PRV89 to CS02021 (DeviceID.PRV89.toString(), csAdapter, 1),
+        DeviceID.UZ91 to Delta(DeviceID.UZ91.toString(), modbusAdapter, 91),
+        DeviceID.OGS_1 to PhaseMeter(DeviceID.OGS_1.toString(), modbusAdapter, 4)
     )
 
     init {

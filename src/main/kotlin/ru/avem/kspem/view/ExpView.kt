@@ -17,6 +17,7 @@ class ExpView() : View("Окно испытания") {
     var circlePR200: Circle by singleAssign()
     var circleAVEM: Circle by singleAssign()
     var circleDelta: Circle by singleAssign()
+    var circleT42: Circle by singleAssign()
     var circleLATR: Circle by singleAssign()
 
     val controller: MainViewController by inject()
@@ -32,6 +33,12 @@ class ExpView() : View("Окно испытания") {
             baseColor = Color.hsb(Singleton.color1, Singleton.color2, Singleton.color3)
         }
         controller.initExp()
+
+        if (Singleton.isAutoMod) {
+            btnNext.hide()
+        } else {
+            btnNext.show()
+        }
     }
 
     override val root =
@@ -114,6 +121,20 @@ class ExpView() : View("Окно испытания") {
                                 isSmooth = true
                             }
                         }
+                        hbox(16.0) {
+                            label("Т-42") {
+                                hboxConstraints {
+                                    hgrow = Priority.ALWAYS
+                                }
+                                useMaxWidth = true
+                            }
+                            circleT42 = circle {
+                                radius = 20.0
+                                fill = State.INTERMEDIATE.c
+                                stroke = c("black")
+                                isSmooth = true
+                            }
+                        }
                     }
                 }
                 hbox(16.0, Pos.CENTER) {
@@ -122,7 +143,7 @@ class ExpView() : View("Окно испытания") {
                             controller.exit()
                         }
                     }
-                    btnStart = button("Старт") {
+                    btnStart = button("Пуск") {
                         action {
                             controller.startExperiment()
                         }

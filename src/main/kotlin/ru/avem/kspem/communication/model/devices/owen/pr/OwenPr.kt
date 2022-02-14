@@ -62,6 +62,7 @@ class OwenPr(
                             ByteBuffer.allocate(4).putShort(modbusRegister.second()).putShort(modbusRegister.first())
                                 .also { it.flip() }.float
                     }
+                    else -> {}
                 }
             }
             true

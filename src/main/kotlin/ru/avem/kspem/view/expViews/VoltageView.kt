@@ -13,7 +13,7 @@ import tornadofx.*
 class VoltageView : View() {
     val name = "Определение линейных напряжений двигателя"
     val data = VoltageData()
-    val seriesAB = XYChart.Series<Number, Number>()
+//    val seriesAB = XYChart.Series<Number, Number>()
 
     override fun onDock() {
         super.onDock()
@@ -74,20 +74,20 @@ class VoltageView : View() {
                 columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
             }
         }
-        linechart("Характеристика разгона", NumberAxis(), NumberAxis()) {
-            hboxConstraints {
-                hgrow = Priority.ALWAYS
-                vgrow = Priority.ALWAYS
-            }
-            useMaxHeight = true
-            maxWidth = 1200.0
-            animated = true
-            createSymbols = false
-            isLegendVisible = false
-            yAxis.label = ("Напряжение, В")
-            xAxis.label = ("Частота , об/мин")
-            data.add(seriesAB)
-        }
+//        linechart("Характеристика разгона", NumberAxis(), NumberAxis()) {
+//            hboxConstraints {
+//                hgrow = Priority.ALWAYS
+//                vgrow = Priority.ALWAYS
+//            }
+//            useMaxHeight = true
+//            maxWidth = 1200.0
+//            animated = true
+//            createSymbols = false
+//            isLegendVisible = false
+//            yAxis.label = ("Напряжение, В")
+//            xAxis.label = ("Частота , об/мин")
+//            data.add(seriesAB)
+//        }
     }
 
     fun clearTables() {

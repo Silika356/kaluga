@@ -4,9 +4,9 @@ import javafx.scene.input.KeyCombination
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import ru.avem.kserialpooler.communication.PortDiscover
+import ru.avem.kspem.controllers.printerController.TSCPrinter
 import ru.avem.kspem.database.validateDB
 import ru.avem.kspem.view.AuthorizationView
-import ru.avem.kspem.view.MainView
 import ru.avem.kspem.view.Styles
 import tornadofx.App
 
@@ -26,6 +26,7 @@ class Main : App(AuthorizationView::class, Styles::class) {
         stage.isResizable = false
         stage.initStyle(StageStyle.TRANSPARENT)
         stage.fullScreenExitKeyCombination = KeyCombination.NO_MATCH
+        TSCPrinter.initJNA()
         super.start(stage)
 //        FX.primaryStage.icons += Image("icon.png")
     }

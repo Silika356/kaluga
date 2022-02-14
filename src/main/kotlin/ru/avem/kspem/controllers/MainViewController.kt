@@ -11,8 +11,11 @@ import ru.avem.kspem.communication.model.CommunicationModel
 import ru.avem.kspem.communication.model.devices.avem.avem7.Avem
 import ru.avem.kspem.communication.model.devices.delta.Delta
 import ru.avem.kspem.communication.model.devices.owen.pr.OwenPr
+import ru.avem.kspem.communication.model.devices.tilkom.T42
+import ru.avem.kspem.controllers.printerController.TSCPrinter.Companion.printDocument
 import ru.avem.kspem.data.*
 import ru.avem.kspem.database.entities.Protocol
+import ru.avem.kspem.protocol.PrinterProtocol
 import ru.avem.kspem.utils.*
 import ru.avem.kspem.view.ExpView
 import ru.avem.kspem.view.MainView
@@ -27,6 +30,7 @@ class MainViewController : Controller() {
     private val pr102 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2_1) as OwenPr
     private val avem4 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.PV21) as Avem
     val delta = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.UZ91) as Delta
+    val t42 = CommunicationModel.getDeviceById(CommunicationModel.DeviceID.T42) as T42
 
     private val expView: ExpView by inject()
     private val mainView: MainView by inject()
@@ -34,7 +38,7 @@ class MainViewController : Controller() {
     var serialNum = ""
     var objectName = ""
     private var logBuffer: String? = null
-    var expListRaw = mutableListOf<CustomController>(mgr,ikas,moment, voltage)
+    var expListRaw = mutableListOf<CustomController>(mgr, ikas, moment, voltage, dpr)
     var expList = expListRaw.iterator()
 
 
@@ -58,7 +62,8 @@ class MainViewController : Controller() {
 
     fun showAboutUs() {
         runLater {
-            Toast.makeText("Версия ПО: 1.0.0\nВерсия БСУ: 1.0.0\nДата: 25.11.2021").show(Toast.ToastType.INFORMATION)
+            Toast.makeText("Авиаагрегат-Н\nг.Новочеркасск\nВерсия ПО: 1.0.0\nВерсия БСУ: 1.0.0\nДата: 10.01.2022")
+                .show(Toast.ToastType.INFORMATION)
         }
     }
 
@@ -101,8 +106,24 @@ class MainViewController : Controller() {
         if (expList.hasNext()) {
             currentExp = expList.next()
             loadExp()
+            if (Singleton.isAutoMod) {
+                thread(isDaemon = true) {
+                    sleep(1000)
+                    startExperiment()
+                }
+            }
         } else {
             saveProtocol()
+            if (Singleton.isPrinter) {
+                if (protocolModel.ikasResult == protocolModel.mgrResult
+                    && protocolModel.mgrResult == protocolModel.momentResult
+                    && protocolModel.voltageResult == protocolModel.momentResult
+                    && protocolModel.dprresult == protocolModel.voltageResult
+                    && protocolModel.mgrResult == "Успешно"
+                ) {
+                    printLabel()
+                }
+            }
             clearProtocol()
             find<ExpView>().replaceWith<MainView>()
         }
@@ -115,8 +136,10 @@ class MainViewController : Controller() {
     }
 
     fun loadExp() {
-        expView.vBoxLog.clear()
-        currentExp.loadExpModel()
+        runLater {
+            expView.vBoxLog.clear()
+            currentExp.loadExpModel()
+        }
     }
 
     fun startExperiment() {
@@ -124,8 +147,10 @@ class MainViewController : Controller() {
             currentExp.start()
         }
     }
+
     fun exit() {
-        showTwoWayDialog(title = "Внимание!",
+        showTwoWayDialog(
+            title = "Внимание!",
             text = "Текущий протокол будет сохранен и очищен",
             way1Title = "Подтвердить",
             way2Title = "Отменить",
@@ -136,8 +161,8 @@ class MainViewController : Controller() {
             },
             way2 = {
             },
-            currentWindow = primaryStage.scene.window)
-                find<ExpView>().replaceWith<MainView>()
+            currentWindow = primaryStage.scene.window
+        )
     }
 
     fun stopExperiment() {
@@ -173,11 +198,30 @@ class MainViewController : Controller() {
 //        }
 //    }
 
+    private fun printLabel() {
+        printDocument(
+            PrinterProtocol(
+                label1 = objectModel!!.name,
+                hz = objectModel!!.hzNom.replace(".", ","),
+                volt = objectModel!!.uNom.replace(".", ","),
+                amperage = objectModel!!.iNom.replace(".", ","),
+                kpd = objectModel!!.kpd.replace(".", ","),
+                power = objectModel!!.pNom.replace(".", ","),
+                rpm = objectModel!!.nNom.replace(".", ","),
+                moment = objectModel!!.mNom.replace(".", ","),
+                mass = objectModel!!.weightNom.replace(".", ","),
+                objectNumber = protocolModel.serial,
+                date = protocolModel.dateManufacture
+            ).document
+        )
+    }
+
     private fun saveProtocol() {
         transaction {
             Protocol.new {
                 //DATA
                 objectName = protocolModel.objectName
+                dateManufacture = protocolModel.dateManufacture
                 date = protocolModel.date
                 time = protocolModel.time
                 dataType = protocolModel.dataType
@@ -220,6 +264,27 @@ class MainViewController : Controller() {
                 voltageResult = protocolModel.voltageResult
                 //DPR//
 
+                dprampSinP = protocolModel.dprampSinP
+                dprampSinN = protocolModel.dprampSinN
+                dprampCosP = protocolModel.dprampCosP
+                dprampCosN = protocolModel.dprampCosN
+                dprmaxSinP = protocolModel.dprmaxSinP
+                dprmaxSinN = protocolModel.dprmaxSinN
+                dprmaxCosP = protocolModel.dprmaxCosP
+                dprmaxCosN = protocolModel.dprmaxCosN
+                dprminSinP = protocolModel.dprminSinP
+                dprminSinN = protocolModel.dprminSinN
+                dprminCosP = protocolModel.dprminCosP
+                dprminCosN = protocolModel.dprminCosN
+                dprdprSinP = protocolModel.dprdprSinP
+                dprdprSinN = protocolModel.dprdprSinN
+                dprdprCosP = protocolModel.dprdprCosP
+                dprdprCosN = protocolModel.dprdprCosN
+                dprdeviationMin = protocolModel.dprdeviationMin
+                dprdeviationMax = protocolModel.dprdeviationMax
+                dprdeviationDpr = protocolModel.dprdeviationDpr
+                dprhz = protocolModel.dprhz
+                dprresult = protocolModel.dprresult
             }
         }
         runLater {
@@ -278,6 +343,16 @@ class MainViewController : Controller() {
                             expView.circleDelta.fill = State.BAD.c
                         }
                     }
+                    t42.checkResponsibility()
+                    if (t42.isResponding) {
+                        runLater {
+                            expView.circleT42.fill = State.OK.c
+                        }
+                    } else {
+                        runLater {
+                            expView.circleT42.fill = State.BAD.c
+                        }
+                    }
                 }
 //                val serialPortGPT = SerialPort.getCommPorts().filter {
 //                    it.toString() == "CP2103 USB to GPT"
@@ -319,48 +394,72 @@ class MainViewController : Controller() {
     }
 
     fun clearProtocol() {
-            protocolModel.objectName = ""
-            protocolModel.date = ""
-            protocolModel.time = ""
-            protocolModel.operator = ""
-            protocolModel.serial = ""
-            protocolModel.dataType = ""
-            protocolModel.dataP = ""
-            protocolModel.dataU = ""
-            protocolModel.dataI = ""
-            protocolModel.dataN = ""
-            protocolModel.dataF = ""
-            protocolModel.dataKPD = ""
-            protocolModel.dataCOS = ""
+        protocolModel.objectName = ""
+        protocolModel.dateManufacture = ""
+        protocolModel.date = ""
+        protocolModel.time = ""
+        protocolModel.operator = ""
+        protocolModel.serial = ""
+        protocolModel.dataType = ""
+        protocolModel.dataP = ""
+        protocolModel.dataU = ""
+        protocolModel.dataI = ""
+        protocolModel.dataN = ""
+        protocolModel.dataF = ""
+        protocolModel.dataKPD = ""
+        protocolModel.dataCOS = ""
 //MGR//
-            protocolModel.mgrU = ""
-            protocolModel.mgrR15 = ""
-            protocolModel.mgrR60 = ""
-            protocolModel.mgrkABS = ""
-            protocolModel.mgrTemp = ""
-            protocolModel.mgrResult = ""
+        protocolModel.mgrU = ""
+        protocolModel.mgrR15 = ""
+        protocolModel.mgrR60 = ""
+        protocolModel.mgrkABS = ""
+        protocolModel.mgrTemp = ""
+        protocolModel.mgrResult = ""
 //IKAS//
-            protocolModel.ikasRA = ""
-            protocolModel.ikasRB = ""
-            protocolModel.ikasRC = ""
-            protocolModel.ikasDeviation = ""
-            protocolModel.ikasResult = ""
+        protocolModel.ikasRA = ""
+        protocolModel.ikasRB = ""
+        protocolModel.ikasRC = ""
+        protocolModel.ikasDeviation = ""
+        protocolModel.ikasResult = ""
 //MOMENT//
-            protocolModel.momentN = ""
-            protocolModel.momentAVG = ""
-            protocolModel.momentMAX = ""
-            protocolModel.momentDeviation = ""
-            protocolModel.momentResult = ""
+        protocolModel.momentN = ""
+        protocolModel.momentAVG = ""
+        protocolModel.momentMAX = ""
+        protocolModel.momentDeviation = ""
+        protocolModel.momentResult = ""
 //VOLTAGE//
-            protocolModel.voltageUAB = ""
-            protocolModel.voltageUBC = ""
-            protocolModel.voltageUCA = ""
-            protocolModel.voltageN = ""
-            protocolModel.voltageF = ""
-            protocolModel.voltageUAB1000 = ""
-            protocolModel.voltageUBC1000 = ""
-            protocolModel.voltageUCA1000 = ""
-            protocolModel.voltageDeviation = ""
-            protocolModel.voltageResult = ""
+        protocolModel.voltageUAB = ""
+        protocolModel.voltageUBC = ""
+        protocolModel.voltageUCA = ""
+        protocolModel.voltageN = ""
+        protocolModel.voltageF = ""
+        protocolModel.voltageUAB1000 = ""
+        protocolModel.voltageUBC1000 = ""
+        protocolModel.voltageUCA1000 = ""
+        protocolModel.voltageDeviation = ""
+        protocolModel.voltageResult = ""
+
+//DPR
+        protocolModel.dprampSinP = ""
+        protocolModel.dprampSinN = ""
+        protocolModel.dprampCosP = ""
+        protocolModel.dprampCosN = ""
+        protocolModel.dprmaxSinP = ""
+        protocolModel.dprmaxSinN = ""
+        protocolModel.dprmaxCosP = ""
+        protocolModel.dprmaxCosN = ""
+        protocolModel.dprminSinP = ""
+        protocolModel.dprminSinN = ""
+        protocolModel.dprminCosP = ""
+        protocolModel.dprminCosN = ""
+        protocolModel.dprdprSinP = ""
+        protocolModel.dprdprSinN = ""
+        protocolModel.dprdprCosP = ""
+        protocolModel.dprdprCosN = ""
+        protocolModel.dprdeviationMin = ""
+        protocolModel.dprdeviationMax = ""
+        protocolModel.dprdeviationDpr = ""
+        protocolModel.dprhz = ""
+        protocolModel.dprresult = ""
     }
 }

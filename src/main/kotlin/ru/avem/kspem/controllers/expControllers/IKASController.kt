@@ -4,8 +4,10 @@ import ru.avem.kspem.communication.model.CommunicationModel
 import ru.avem.kspem.communication.model.devices.avem.ikas.IKAS8Model
 import ru.avem.kspem.communication.model.devices.trm202.TRM202Model
 import ru.avem.kspem.controllers.CustomController
+import ru.avem.kspem.data.objectModel
 import ru.avem.kspem.data.protocolModel
 import ru.avem.kspem.utils.LogTag
+import ru.avem.kspem.utils.Singleton
 import ru.avem.kspem.utils.sleep
 import ru.avem.kspem.view.expViews.IKASView
 import ru.avem.stand.utils.autoformat
@@ -119,8 +121,8 @@ class IKASController : CustomController() {
                 } else if (!model.data.deviation.value.isDouble()) {
                     appendMessageToLog(LogTag.ERROR, "Не удалось рассчитать разброс")
                     model.data.result.value = "Прервано"
-                } else if (model.data.deviation.value.toDouble() > 20.0) {
-                    appendMessageToLog(LogTag.MESSAGE, "Разброс более 20%")
+                } else if (model.data.deviation.value.toDouble() > objectModel!!.ikasDev.toDoubleOrDefault(5.0)) {
+                    appendMessageToLog(LogTag.MESSAGE, "Разброс более ${objectModel!!.ikasDev.toDoubleOrDefault(5.0)}%")
                     model.data.result.value = "Не соответствует"
                 } else {
                     appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
@@ -141,6 +143,9 @@ class IKASController : CustomController() {
         }
         finalizeExperiment()
         saveData()
+        if (model.data.result.value == "Успешно" && Singleton.isAutoMod) {
+            controller.next()
+        }
     }
 
     override fun stop() {
@@ -184,10 +189,10 @@ class IKASController : CustomController() {
             model.data.calcR2.value = "%.4f".format(Locale.ENGLISH, (rB / (1 + rtK * (t - rtT))))
             model.data.calcR3.value = "%.4f".format(Locale.ENGLISH, (rC / (1 + rtK * (t - rtT))))
             val list = listOf(rA, rB, rC)
-            val min = list.min() ?: 0.0
-            val max = list.max() ?: 0.0
+            val min = list.minOrNull() ?: 0.0
+            val max = list.maxOrNull() ?: 0.0
             if (min != 0.0 && max != 0.0) {
-                model.data.deviation.value = "%.4f".format(abs((max - min) / min * 100))
+                model.data.deviation.value = "%.4f".format(Locale.ENGLISH, abs((max - min) / min * 100))
             }
 
 //            model.data.averR.value =

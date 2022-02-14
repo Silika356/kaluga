@@ -9,6 +9,7 @@ import ru.avem.kspem.controllers.CustomController
 import ru.avem.kspem.data.objectModel
 import ru.avem.kspem.data.protocolModel
 import ru.avem.kspem.utils.LogTag
+import ru.avem.kspem.utils.Singleton
 import ru.avem.kspem.utils.sleep
 import ru.avem.kspem.view.expViews.VoltageView
 import ru.avem.stand.utils.autoformat
@@ -23,10 +24,11 @@ class VoltageController : CustomController() {
     override val model: VoltageView by inject()
     override val name = model.name
     var deltaStatus = 0
-    var isChart = true
+//    var isChart = true
     var rpm = 0.0
     var volt = 0.0
     var voltage = 0.0
+    val motorSpeed = 2900.0
 
     override fun start() {
         model.clearTables()
@@ -41,7 +43,7 @@ class VoltageController : CustomController() {
 //                model.data.rpm.value = "500"
 //                rpm = 500.0
             } else {
-                cm.startPoll(CommunicationModel.DeviceID.M42, T42Model.RPM) { value ->
+                cm.startPoll(CommunicationModel.DeviceID.T42, T42Model.RPM) { value ->
                     if (!t42.isResponding) cause = "T42 не отвечает"
                     model.data.rpm.value = value.autoformat()
                     rpm = value.toDouble()
@@ -71,7 +73,7 @@ class VoltageController : CustomController() {
 
         if (isExperimentRunning) {
             appendMessageToLog(LogTag.MESSAGE, "Инициализация Delta...")
-            var timeDelta = 100
+            var timeDelta = 50
             while (isExperimentRunning && timeDelta-- > 0) {
                 sleep(100)
             }
@@ -90,7 +92,7 @@ class VoltageController : CustomController() {
         }
 
         if (isExperimentRunning) {
-            delta.setObjectParamsRun("%.2f".format(Locale.ENGLISH, (objectModel!!.nNom.toDouble() / 3000.0 * 50.0)).toDouble())
+            delta.setObjectParamsRun("%.2f".format(Locale.ENGLISH, (objectModel!!.nNom.toDouble() / motorSpeed * 50.0)).toDouble())
         }
 
         if (isExperimentRunning) {
@@ -102,9 +104,9 @@ class VoltageController : CustomController() {
             appendMessageToLog(LogTag.DEBUG, "Разгон ПЧ")
         }
 
-        if (isExperimentRunning) {
-            startChart()
-        }
+//        if (isExperimentRunning) {
+//            startChart()
+//        }
 
         if (isExperimentRunning) {
             var timer = 10.0
@@ -112,13 +114,28 @@ class VoltageController : CustomController() {
                 sleep(100)
                 timer -= 0.1
             }
-            isChart = false
+//            isChart = false
         }
 
         if (isExperimentRunning) {
-            appendMessageToLog(LogTag.MESSAGE, "Сохранение линейных напряжений")
+            if (rpm > 1500) {
+                var timer = 5.0
+                while (isExperimentRunning && timer > 0) {
+                    sleep(100)
+                    timer -= 0.1
+                }
+            }
+        }
+
+        if (isExperimentRunning) {
+            calibrateSpeed()
+            sleep(2000)
+        }
+
+        if (isExperimentRunning) {
+            appendMessageToLog(LogTag.MESSAGE, "Измерение линейных напряжений")
             model.data.uAB.value = voltage.autoformat()
-            model.data.uABcalc.value = (voltage * rpm / 1000).autoformat()
+            model.data.uABcalc.value = (voltage * 1000 / rpm).autoformat()
 
             protocolModel.voltageN = model.data.rpm.value
             protocolModel.voltageF = model.data.freq.value
@@ -134,7 +151,7 @@ class VoltageController : CustomController() {
 
         if (isExperimentRunning) {
             model.data.uBC.value = voltage.autoformat()
-            model.data.uBCcalc.value = (voltage * rpm / 1000).autoformat()
+            model.data.uBCcalc.value = (voltage * 1000 / rpm).autoformat()
 
             protocolModel.voltageUBC = model.data.uBC.value
             protocolModel.voltageUBC1000 = model.data.uBCcalc.value
@@ -148,7 +165,7 @@ class VoltageController : CustomController() {
 
         if (isExperimentRunning) {
             model.data.uCA.value = voltage.autoformat()
-            model.data.uCAcalc.value = (voltage * rpm / 1000).autoformat()
+            model.data.uCAcalc.value = (voltage * 1000 / rpm).autoformat()
 
             protocolModel.voltageUCA = model.data.uCA.value
             protocolModel.voltageUCA1000 = model.data.uCAcalc.value
@@ -158,36 +175,38 @@ class VoltageController : CustomController() {
                 model.data.uBC.value.toDoubleOrDefault(0.0),
                 model.data.uCA.value.toDoubleOrDefault(0.0)
             )
-            val min = list.min() ?: 0.0
-            val max = list.max() ?: 0.0
+            val min = list.minOrNull() ?: 0.0
+            val max = list.maxOrNull() ?: 0.0
             if (min != 0.0 && max != 0.0) {
-                model.data.deviation.value = "%.4f".format(abs((max - min) / min * 100))
+                model.data.deviation.value = "%.2f".format(Locale.ENGLISH, abs((max - min) / min * 100))
             }
         }
 
+//        var timer11 = 300.0
+//        while (timer11 > 0 && isExperimentRunning) {
+//            sleep(100)
+//            timer11 -= 0.1
+//        }
 
         delta.stopObject()
 
         if (isExperimentRunning) {
             appendMessageToLog(LogTag.MESSAGE, "Выключение ПЧ")
         }
-        var timerDelta = 5.0
+        var timerDelta = 10.0
         while (timerDelta > 0) {
             sleep(100)
             timerDelta -= 0.1
         }
 
-        isChart = false
+//        isChart = false
 
-
-        isChart = false
-        cm.stopPoll(CommunicationModel.DeviceID.M42)
 
         when (cause) {
             "" -> {
                 if (model.data.deviation.value.toDoubleOrNull() != null) {
-                    if (model.data.deviation.value.toDouble() > 20.0) {
-                        appendMessageToLog(LogTag.ERROR, "Разброс более 20%")
+                    if (model.data.deviation.value.toDouble() > objectModel!!.voltageDev.toDoubleOrDefault(5.0)) {
+                        appendMessageToLog(LogTag.ERROR, "Разброс более ${objectModel!!.voltageDev.toDoubleOrDefault(5.0)}%")
                         model.data.result.value = "Не соответствует"
                     } else {
                         model.data.result.value = "Успешно"
@@ -209,24 +228,39 @@ class VoltageController : CustomController() {
         protocolModel.voltageResult = model.data.result.value
         model.data.rpm.value = protocolModel.voltageN
         model.data.freq.value = protocolModel.voltageF
+        if (model.data.result.value == "Успешно" && Singleton.isAutoMod) {
+            controller.next()
+        }
     }
 
-    private fun startChart() {
-        var curTime = 0.1
-        thread(isDaemon = true) {
-            runLater {
-                model.seriesAB.data.clear()
-            }
-            sleep(100)
-            while (isChart) {
-                runLater {
-                    model.seriesAB.data.add(XYChart.Data(rpm, volt))
-                }
-                sleep(10)
-                curTime += 0.01
+    private fun calibrateSpeed() {
+        if (isExperimentRunning) {
+            val freq = "%.2f".format(Locale.ENGLISH, (objectModel!!.nNom.toDouble() / motorSpeed * 50.0)).toDouble()
+            val kSpeed = objectModel!!.nNom.toDouble() / rpm
+            if (kSpeed < 1.2 && kSpeed > 0.8) {
+                delta.setObjectF("%.2f".format(Locale.ENGLISH,kSpeed * freq).toDouble())
+            } else {
+                cause = "Несоответствие скорости вращения частоте ПЧ"
             }
         }
     }
+
+//    private fun startChart() {
+//        var curTime = 0.1
+//        thread(isDaemon = true) {
+//            runLater {
+//                model.seriesAB.data.clear()
+//            }
+//            sleep(100)
+//            while (isChart) {
+//                runLater {
+//                    model.seriesAB.data.add(XYChart.Data(rpm, volt))
+//                }
+//                sleep(10)
+//                curTime += 0.01
+//            }
+//        }
+//    }
 
     override fun stop() {
         cause = "Отменено оператором"

@@ -5,6 +5,8 @@ import ru.avem.kspem.communication.model.IDeviceModel
 
 class AvemModel : IDeviceModel {
     companion object {
+        const val AMP = "AMP"
+        const val PTP = "PTP"
         const val VOLTAGE = "VOLTAGE"
         const val FREQUENCY = "FREQUENCY"
         const val SHUNT = "SHUNT"
@@ -14,8 +16,10 @@ class AvemModel : IDeviceModel {
     }
 
     override val registers = mapOf(
+        AMP to DeviceRegister(0x1000, DeviceRegister.RegisterValueType.FLOAT),
         VOLTAGE to DeviceRegister(0x1004, DeviceRegister.RegisterValueType.FLOAT),
         FREQUENCY to DeviceRegister(0x1006, DeviceRegister.RegisterValueType.FLOAT),
+        PTP to DeviceRegister(0x1008, DeviceRegister.RegisterValueType.FLOAT),
         SHUNT to DeviceRegister(0x11A0, DeviceRegister.RegisterValueType.FLOAT),
         PGA_MODE to DeviceRegister(0x10C4, DeviceRegister.RegisterValueType.SHORT),
         RELAY_STATE to DeviceRegister(0x1136, DeviceRegister.RegisterValueType.SHORT),

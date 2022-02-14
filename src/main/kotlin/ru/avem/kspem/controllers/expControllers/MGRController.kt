@@ -1,11 +1,14 @@
 package ru.avem.kspem.controllers.expControllers
 
 import ru.avem.kspem.controllers.CustomController
+import ru.avem.kspem.data.objectModel
 import ru.avem.kspem.data.protocolModel
 import ru.avem.kspem.utils.LogTag
+import ru.avem.kspem.utils.Singleton
 import ru.avem.kspem.utils.sleep
 import ru.avem.kspem.view.expViews.MGRView
 import ru.avem.stand.utils.autoformat
+import ru.avem.stand.utils.toDoubleOrDefault
 import tornadofx.isDouble
 import java.util.*
 
@@ -28,8 +31,12 @@ class MGRController : CustomController() {
             pr102.km8(true)
         }
         if (isExperimentRunning) {
-            sleep(1000)
             appendMessageToLog(LogTag.MESSAGE, "Инициализация Мегаомметра...")
+            var timerMGR = 50
+            while (isExperimentRunning && timerMGR > 0) {
+                sleep(100)
+                timerMGR--
+            }
             with(cs02) {
                 var timer1 = 50
                 while (timer1-- > 0) {
@@ -39,7 +46,7 @@ class MGRController : CustomController() {
 
                 if (isResponding) {
                     appendMessageToLog(LogTag.MESSAGE, "Измерение сопротивления 90 секунд")
-                    setVoltage(100)
+                    setVoltage(objectModel!!.uMGR.toDoubleOrDefault(100.0).toInt())
                     var timer = 90.0
                     while (isExperimentRunning && timer > 0) {
                         sleep(100)
@@ -47,7 +54,9 @@ class MGRController : CustomController() {
                         timer -= 0.1
                     }
                     if (isExperimentRunning) {
-                        val mgrData = readData()
+                        var mgrData = readData()
+                        if (mgrData[0].toDouble() == 0.0) mgrData = readData()
+                        if (mgrData[0].toDouble() == 0.0) mgrData = readData()
                         val measuredR60 = mgrData[0].toDouble()
                         val measuredUr = mgrData[1].toDouble()
                         val measuredAbs = mgrData[2].toDouble()
@@ -66,8 +75,8 @@ class MGRController : CustomController() {
                             model.data.R15.value = measuredR15Mohm.autoformat()
                             model.data.R60.value = measuredR60Mohm.autoformat()
                             model.data.K_ABS.value = measuredAbs.autoformat()
-                            appendMessageToLog(LogTag.DEBUG, "Заземление")
-                            timer = 30.0
+                            appendMessageToLog(LogTag.DEBUG, "Ожидайте разряда")
+                            timer = 20.0
                             while (isExperimentRunning && timer > 0) {
                                 sleep(100)
                                 model.data.time.value = "%.1f".format(Locale.ENGLISH, timer)
@@ -81,7 +90,7 @@ class MGRController : CustomController() {
                 }
             }
         }
-//        finalizeExperiment()
+
         pr102.km7(false)
         pr102.km8(false)
 
@@ -89,14 +98,13 @@ class MGRController : CustomController() {
         when (cause) {
             "" -> {
                 if (model.data.K_ABS.value.isDouble()) {
-                    if (model.data.K_ABS.value.toDouble() < 1.3) {
-                        appendMessageToLog(LogTag.ERROR, "Измеренный kABS < 1.3")
+                    if (model.data.K_ABS.value.toDouble() < objectModel!!.kABS.toDoubleOrDefault(1.4)) {
+                        appendMessageToLog(LogTag.ERROR, "Измеренный kABS < ${objectModel!!.kABS.toDoubleOrDefault(1.4)}")
                         model.data.result.value = "Не соответствует"
 //                        cause = "мегер"
                     } else {
-                        model.data.result.value = "Соответствует"
+                        model.data.result.value = "Успешно"
                         appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
-//                        controller.next()
                     }
                 } else {
                     model.data.result.value = "Обрыв"
@@ -110,6 +118,9 @@ class MGRController : CustomController() {
         }
         finalizeExperiment()
         saveData()
+        if (model.data.result.value == "Успешно" && Singleton.isAutoMod) {
+            controller.next()
+        }
     }
 
 

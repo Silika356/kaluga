@@ -64,7 +64,7 @@ class RUNNINGView : View() {
                 minHeight = 120.0
                 maxHeight = 120.0
                 isMouseTransparent = true
-                column("Отклонение, %", MomentData::mDeviation.getter)
+//                column("Отклонение, %", MomentData::mDeviation.getter)
                 column("Результат", MomentData::result.getter)
                 columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
             }
@@ -80,7 +80,7 @@ class RUNNINGView : View() {
             createSymbols = false
             isLegendVisible = false
             xAxis.label = ("Время,с")
-            yAxis.label = ("Момент, Н*м")
+            yAxis.label = ("Момент, мН*м")
             data.add(series)
         }
     }
@@ -91,7 +91,9 @@ class RUNNINGView : View() {
         data.mAvg.value = ""
         data.mMax.value = ""
         data.result.value = ""
-        data.n.value = ""
+        runLater {
+            series.data.clear()
+        }
     }
 }
 data class MomentData(
@@ -99,6 +101,5 @@ data class MomentData(
     val m: StringProperty = SimpleStringProperty(""),
     val mAvg: StringProperty = SimpleStringProperty(""),
     val mMax: StringProperty = SimpleStringProperty(""),
-    val mDeviation: StringProperty = SimpleStringProperty(""),
     val result: StringProperty = SimpleStringProperty("")
 )

@@ -31,12 +31,14 @@ val mgr = MGRController()
 val ikas = IKASController()
 val moment = MomentController()
 val voltage = VoltageController()
+val dpr = DprController()
 
 val protocolModel = ProtocolModel()
 data class ProtocolModel(
     //DATA//
     var objectName: String = "",
     var date: String = "",
+    var dateManufacture: String = "",
     var time: String = "",
     var operator: String = "",
     var serial: String = "",
@@ -77,7 +79,27 @@ data class ProtocolModel(
     var voltageUBC1000: String = "",
     var voltageUCA1000: String = "",
     var voltageDeviation: String = "",
-    var voltageResult: String = ""
+    var voltageResult: String = "",
     //DPR//
-
+    var dprampSinP: String = "",
+    var dprampSinN: String = "",
+    var dprampCosP: String = "",
+    var dprampCosN: String = "",
+    var dprmaxSinP: String = "",
+    var dprmaxSinN: String = "",
+    var dprmaxCosP: String = "",
+    var dprmaxCosN: String = "",
+    var dprminSinP: String = "",
+    var dprminSinN: String = "",
+    var dprminCosP: String = "",
+    var dprminCosN: String = "",
+    var dprdprSinP: String = "",
+    var dprdprSinN: String = "",
+    var dprdprCosP: String = "",
+    var dprdprCosN: String = "",
+    var dprdeviationMin: String = "",
+    var dprdeviationMax: String = "",
+    var dprdeviationDpr: String = "",
+    var dprhz: String = "",
+    var dprresult: String = ""
 )

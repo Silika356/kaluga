@@ -75,7 +75,26 @@ fun saveProtocolAsWorkbook(protocol: Protocol, path: String = "cfg/lastOpened.xl
                                 "#VOLTAGE_N#" -> cell.setCellValue(protocol.voltageN)
                                 "#VOLTAGE_RESULT#" -> cell.setCellValue(protocol.voltageResult)
                                 //DPR
-
+                                "#DPR_UMINSINP#" -> cell.setCellValue(protocol.dprminSinP)
+                                "#DPR_UMINCOSP#" -> cell.setCellValue(protocol.dprminCosP)
+                                "#DPR_UMINSINN#" -> cell.setCellValue(protocol.dprminSinN)
+                                "#DPR_UMINCOSN#" -> cell.setCellValue(protocol.dprminCosN)
+                                "#DPR_UMAXSINP#" -> cell.setCellValue(protocol.dprmaxSinP)
+                                "#DPR_UMAXCOSP#" -> cell.setCellValue(protocol.dprmaxCosP)
+                                "#DPR_UMAXSINN#" -> cell.setCellValue(protocol.dprmaxSinN)
+                                "#DPR_UMAXCOSN#" -> cell.setCellValue(protocol.dprmaxCosN)
+                                "#DPR_UAMPSINP#" -> cell.setCellValue(protocol.dprampSinP)
+                                "#DPR_UAMPCOSP#" -> cell.setCellValue(protocol.dprampCosP)
+                                "#DPR_UAMPSINN#" -> cell.setCellValue(protocol.dprampSinN)
+                                "#DPR_UAMPCOSN#" -> cell.setCellValue(protocol.dprampCosN)
+                                "#DPR_DPRSINP#" -> cell.setCellValue(protocol.dprdprSinP)
+                                "#DPR_DPRCOSP#" -> cell.setCellValue(protocol.dprdprCosP)
+                                "#DPR_DPRSINN#" -> cell.setCellValue(protocol.dprdprSinN)
+                                "#DPR_DPRCOSN#" -> cell.setCellValue(protocol.dprdprCosN)
+                                "#DPR_DEVIATIONMIN#" -> cell.setCellValue(protocol.dprdeviationMin)
+                                "#DPR_DEVIATIONMAX#" -> cell.setCellValue(protocol.dprdeviationMax)
+                                "#DPR_DEVIATIONDPR#" -> cell.setCellValue(protocol.dprdeviationDpr)
+                                "#DPR_RESULT#" -> cell.setCellValue(protocol.dprresult)
                                 else -> {
                                     if (cell.stringCellValue.contains("#")) {
                                         cell.setCellValue("")

@@ -32,7 +32,7 @@ fun toHexStr(src: ByteArray): String {
         }
         builder.append(s).append(' ')
     }
-    return builder.toString().toUpperCase().trim { it <= ' ' }
+    return builder.toString().uppercase().trim { it <= ' ' }
 }
 
 fun String.hexStrToAsciiStr(): String {
@@ -78,12 +78,12 @@ fun getAlignedString(input: String, columnWidth: Int, alignment: String = "LEFT"
     }
 }
 
-@ExperimentalTime
-fun toHHmmss(time: Long): String {
-    return time.milliseconds.toComponents { hours, minutes, seconds, _ ->
-        "${hours.padZero()}:${minutes.padZero()}:${seconds.padZero()}"
-    }
-}
+//@ExperimentalTime
+//fun toHHmmss(time: Long): String {
+//    return time.milliseconds.toComponents { hours, minutes, seconds, _ ->
+//        "${hours.padZero()}:${minutes.padZero()}:${seconds.padZero()}"
+//    }
+//}
 
 private fun Int.padZero() = toString().padStart(2, '0')
 
